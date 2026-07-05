@@ -4,8 +4,6 @@ import Features from "./Features";
 import HowItWorks from "./HowItWorks";
 import WhyChooseUs from "./WhyChooseUs";
 import GlobalConnectivity from "./GlobalConnectivity";
-import Stats from "./Stats";
-import Testimonials from "./Testimonials";
 import Footer from "./Footer";
 
 /**
@@ -24,8 +22,6 @@ const LandingPage = () => {
         <HowItWorks />
         <WhyChooseUs />
         <GlobalConnectivity />
-        <Stats />
-        <Testimonials />
       </main>
       <Footer />
     </div>
