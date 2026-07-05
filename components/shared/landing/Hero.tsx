@@ -23,19 +23,19 @@ const Hero = () => {
 
       {/* soft ambient blur accents */}
       <div
-        className="absolute -left-24 top-1/3 -z-0 h-72 w-72 rounded-full bg-sky-200/40 blur-3xl"
+        className="absolute -left-24 top-1/3 -z-0 h-72 w-72 rounded-full bg-blue-900/20 blur-3xl"
         aria-hidden="true"
       />
       <div
-        className="absolute -right-24 bottom-1/4 -z-0 h-72 w-72 rounded-full bg-sky-100/60 blur-3xl"
+        className="absolute -right-24 bottom-1/4 -z-0 h-72 w-72 rounded-full bg-blue-950/15 blur-3xl"
         aria-hidden="true"
       />
 
       <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-4 text-center sm:px-6">
         <span
-          className={`${styles.fadeInUp} mb-5 inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-1.5 text-xs font-medium text-[#0F172A]`}
+          className={`${styles.fadeInUp} mb-5 inline-flex items-center gap-2 rounded-full border border-blue-900/30 bg-blue-950/5 px-4 py-1.5 text-xs font-medium text-[#1E3A8A]`}
         >
-          <span className="size-1.5 rounded-full bg-[#38BDF8]" />
+          <span className="size-1.5 rounded-full bg-[#1E3A8A]" />
           Real-time communication, reimagined
         </span>
 
@@ -87,7 +87,7 @@ const Hero = () => {
             asChild
             size="lg"
             variant="outline"
-            className="h-12 gap-2 rounded-xl border-[#38BDF8] bg-transparent px-7 text-base text-[#38BDF8] transition-all hover:bg-[#38BDF8] hover:text-white"
+            className="h-12 gap-2 rounded-xl border-[#1E3A8A] bg-transparent px-7 text-base text-[#1E3A8A] transition-all hover:bg-[#1E3A8A] hover:text-white"
           >
             <a href="#how-it-works">
               <PlayCircle className="size-4" />

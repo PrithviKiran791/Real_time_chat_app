@@ -6,10 +6,10 @@ const icons = [UserPlus, Users2, MessagesSquare];
 
 const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="bg-sky-50/40 py-20 sm:py-28">
+    <section id="how-it-works" className="bg-blue-950/[0.03] py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="text-sm font-semibold uppercase tracking-wider text-[#38BDF8]">
+          <span className="text-sm font-semibold uppercase tracking-wider text-[#1E3A8A]">
             How It Works
           </span>
           <h2 className="mt-3 font-heading text-3xl font-bold text-[#0F172A] sm:text-4xl">
@@ -24,10 +24,10 @@ const HowItWorks = () => {
             return (
               <Fragment key={step.title}>
                 <div className="flex w-64 flex-col items-center gap-4 rounded-2xl border border-[#0F172A]/10 bg-white p-6 text-center shadow-sm transition-shadow hover:shadow-md">
-                  <span className="flex size-12 items-center justify-center rounded-full bg-sky-50 text-[#38BDF8]">
+                  <span className="flex size-12 items-center justify-center rounded-full bg-blue-900/10 text-[#1E3A8A]">
                     <Icon className="size-6" />
                   </span>
-                  <span className="text-xs font-semibold text-[#38BDF8]">
+                  <span className="text-xs font-semibold text-[#1E3A8A]">
                     Step {index + 1}
                   </span>
                   <h3 className="font-heading text-lg font-semibold text-[#0F172A]">
@@ -40,8 +40,8 @@ const HowItWorks = () => {
 
                 {!isLast && (
                   <>
-                    <ArrowDown className="size-6 shrink-0 text-[#38BDF8] md:hidden" />
-                    <ArrowRight className="hidden size-6 shrink-0 text-[#38BDF8] md:block" />
+                    <ArrowDown className="size-6 shrink-0 text-[#1E3A8A] md:hidden" />
+                    <ArrowRight className="hidden size-6 shrink-0 text-[#1E3A8A] md:block" />
                   </>
                 )}
               </Fragment>

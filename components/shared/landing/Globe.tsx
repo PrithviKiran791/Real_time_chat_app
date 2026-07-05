@@ -35,13 +35,13 @@ const Globe = ({ className, size = 560 }: GlobeProps) => {
       >
         <defs>
           <radialGradient id="globeFill" cx="50%" cy="45%" r="60%">
-            <stop offset="0%" stopColor="#7DD3FC" stopOpacity="0.10" />
-            <stop offset="70%" stopColor="#38BDF8" stopOpacity="0.05" />
-            <stop offset="100%" stopColor="#38BDF8" stopOpacity="0" />
+            <stop offset="0%" stopColor="#93C5FD" stopOpacity="0.10" />
+            <stop offset="70%" stopColor="#1E3A8A" stopOpacity="0.05" />
+            <stop offset="100%" stopColor="#1E3A8A" stopOpacity="0" />
           </radialGradient>
           <linearGradient id="lineFade" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#7DD3FC" stopOpacity="0.15" />
+            <stop offset="0%" stopColor="#1E3A8A" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#93C5FD" stopOpacity="0.15" />
           </linearGradient>
         </defs>
 
@@ -54,7 +54,7 @@ const Globe = ({ className, size = 560 }: GlobeProps) => {
           cy="280"
           r="220"
           fill="none"
-          stroke="#38BDF8"
+          stroke="#1E3A8A"
           strokeOpacity="0.25"
           strokeWidth="1.5"
         />
@@ -67,7 +67,7 @@ const Globe = ({ className, size = 560 }: GlobeProps) => {
             rx="220"
             ry="90"
             fill="none"
-            stroke="#38BDF8"
+            stroke="#1E3A8A"
             strokeOpacity="0.3"
             strokeWidth="1"
           />
@@ -77,7 +77,7 @@ const Globe = ({ className, size = 560 }: GlobeProps) => {
             rx="220"
             ry="150"
             fill="none"
-            stroke="#38BDF8"
+            stroke="#1E3A8A"
             strokeOpacity="0.22"
             strokeWidth="1"
           />
@@ -87,7 +87,7 @@ const Globe = ({ className, size = 560 }: GlobeProps) => {
             rx="90"
             ry="220"
             fill="none"
-            stroke="#7DD3FC"
+            stroke="#93C5FD"
             strokeOpacity="0.25"
             strokeWidth="1"
           />
@@ -97,7 +97,7 @@ const Globe = ({ className, size = 560 }: GlobeProps) => {
             rx="150"
             ry="220"
             fill="none"
-            stroke="#7DD3FC"
+            stroke="#93C5FD"
             strokeOpacity="0.18"
             strokeWidth="1"
           />
@@ -121,12 +121,12 @@ const Globe = ({ className, size = 560 }: GlobeProps) => {
           )}
           {nodes.map((n, i) => (
             <g key={i}>
-              <circle cx={n.cx} cy={n.cy} r="4" fill="#38BDF8" />
+              <circle cx={n.cx} cy={n.cy} r="4" fill="#1E3A8A" />
               <circle
                 cx={n.cx}
                 cy={n.cy}
                 r="4"
-                fill="#7DD3FC"
+                fill="#93C5FD"
                 className={styles.node}
               />
             </g>
