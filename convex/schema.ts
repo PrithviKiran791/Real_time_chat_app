@@ -8,6 +8,11 @@ export default defineSchema({
     clerkId: v.string(),
     email: v.string(),
     pendingRequestCount: v.optional(v.number()),
+    // Profile customization fields
+    displayName: v.optional(v.string()),
+    bio: v.optional(v.string()),
+    statusMessage: v.optional(v.string()),
+    customImageUrl: v.optional(v.string()), // user-uploaded avatar (overrides Clerk imageUrl)
   })
     .index("By_email", ["email"])
     .index("By_clerkId", ["clerkId"]),

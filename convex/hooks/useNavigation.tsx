@@ -3,7 +3,7 @@
 import { useQuery } from "convex/react";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
-import { MessageSquare, Users } from "lucide-react";
+import { MessageSquare, Users, UserRound } from "lucide-react";
 import { api } from "../_generated/api";
 
 export const useNavigation = () => {
@@ -21,11 +21,17 @@ export const useNavigation = () => {
         {
             name: "Friends",
             href: "/friends",
-            icon: <Users/>,
+            icon: <Users />,
             active: pathname === "/friends",
             count: requestCount,
         },
-    ], [pathname,requestCount]);
+        {
+            name: "Profile",
+            href: "/profile",
+            icon: <UserRound />,
+            active: pathname === "/profile",
+        },
+    ], [pathname, requestCount]);
 
     return paths;
-}
+};

@@ -21,6 +21,8 @@ import VideoMessage from "./messages/VideoMessage";
 import FileMessage from "./messages/FileMessage";
 import { useCall } from "@/components/shared/CallProvider";
 import CallScreen from "./CallScreen";
+import { UserProfileDialog } from "@/components/shared/profile/UserProfileDialog";
+
 
 const formatMessageTime = (timestamp: number) => {
     return new Intl.DateTimeFormat(undefined, {
@@ -48,8 +50,10 @@ const ActiveConversation = () => {
     const [viewMembersOpen, setViewMembersOpen] = useState(false);
     const [leaveGroupOpen, setLeaveGroupOpen] = useState(false);
     const [deleteGroupOpen, setDeleteGroupOpen] = useState(false);
+    const [selectedUserId, setSelectedUserId] = useState<Id<"users"> | undefined>(undefined);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const endRef = useRef<HTMLDivElement>(null);
+
 
     const { activeCall, isConnecting, startCall, joinCall, leaveCall } = useCall();
     const isUserInCurrentCall = activeCall && activeCall.conversationId === conversationId;
@@ -68,11 +72,14 @@ const ActiveConversation = () => {
         if (!conversation) return "";
         if (conversation.isGroup) return conversation.name ?? "Group conversation";
 
-        return conversation.members.find((member) => member._id !== conversation.currentUserId)?.username ?? "Direct message";
+        const other = conversation.members.find((member) => member._id !== conversation.currentUserId);
+        return other ? (other.displayName ?? other.username) : "Direct message";
     }, [conversation]);
 
     const otherMember = conversation?.members.find((member) => member._id !== conversation.currentUserId);
-    const avatarUrl = conversation?.isGroup ? conversation.imageUrl ?? "" : otherMember?.imageUrl ?? "";
+    const avatarUrl = conversation?.isGroup
+        ? conversation.imageUrl ?? ""
+        : (otherMember?.customImageUrl ?? otherMember?.imageUrl ?? "");
 
     useEffect(() => {
         endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -151,11 +158,20 @@ const ActiveConversation = () => {
         <div className="flex h-full min-h-0 flex-col">
             <header className="flex items-center justify-between border-b p-3">
                 <div className="flex items-center gap-3 min-w-0">
-                    <Avatar size="lg">
+                    <Avatar 
+                        size="lg"
+                        className={cn(!conversation.isGroup && "cursor-pointer transition-transform hover:scale-105")}
+                        onClick={() => {
+                            if (!conversation.isGroup && otherMember) {
+                                setSelectedUserId(otherMember._id);
+                            }
+                        }}
+                    >
                         <AvatarImage src={avatarUrl} alt={title} />
                         <AvatarFallback>{conversation.isGroup ? <Users className="size-5" /> : <User className="size-5" />}</AvatarFallback>
                         {!conversation.isGroup ? <AvatarBadge className="bg-emerald-500" /> : null}
                     </Avatar>
+
                     <div className="min-w-0">
                         <h2 className="truncate font-semibold">{title}</h2>
                         {conversation.activeCall ? (
@@ -267,7 +283,10 @@ const ActiveConversation = () => {
                             messages.map((message, index) => {
                                 const previousMessage = messages[index - 1];
                                 const grouped = previousMessage?.senderId === message.senderId;
-                                const senderName = message.sender?.username ?? "Unknown";
+                                const senderName = message.sender
+                                    ? (message.sender.displayName ?? message.sender.username)
+                                    : "Unknown";
+                                const senderAvatar = message.sender?.customImageUrl ?? message.sender?.imageUrl ?? "";
 
                                 return (
                                     <div
@@ -278,10 +297,14 @@ const ActiveConversation = () => {
                                             grouped ? (
                                                 <div className="size-8 shrink-0" />
                                             ) : (
-                                                <Avatar>
-                                                    <AvatarImage src={message.sender?.imageUrl ?? ""} alt={senderName} />
+                                                <Avatar 
+                                                    className="cursor-pointer transition-transform hover:scale-105"
+                                                    onClick={() => setSelectedUserId(message.senderId)}
+                                                >
+                                                    <AvatarImage src={senderAvatar} alt={senderName} />
                                                     <AvatarFallback><User className="size-4" /></AvatarFallback>
                                                 </Avatar>
+
                                             )
                                         ) : null}
                                         <div className={cn("flex max-w-[75%] flex-col", message.isCurrentUser && "items-end")}>
@@ -381,7 +404,15 @@ const ActiveConversation = () => {
                     <DeleteGroupDialog open={deleteGroupOpen} onOpenChange={setDeleteGroupOpen} groupId={conversation.groupId} />
                 </>
             ) : null}
+            <UserProfileDialog
+                userId={selectedUserId}
+                open={!!selectedUserId}
+                onOpenChange={(open) => {
+                    if (!open) setSelectedUserId(undefined);
+                }}
+            />
         </div>
+
     );
 };
 

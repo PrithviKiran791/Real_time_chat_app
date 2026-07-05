@@ -31,14 +31,14 @@ const getConversationName = (conversation: Conversation) => {
     if (conversation.isGroup) return conversation.name ?? "Group conversation";
 
     const otherMember = conversation.members.find((member) => member._id !== conversation.currentUserId);
-    return otherMember?.username ?? "Direct message";
+    return otherMember?.displayName ?? otherMember?.username ?? "Direct message";
 };
 
 const getPreview = (conversation: Conversation) => {
     const lastMessage = conversation.lastMessage;
     if (!lastMessage) return "No messages yet";
 
-    const senderPrefix = lastMessage.isCurrentUser ? "You" : lastMessage.sender?.username ?? "Someone";
+    const senderPrefix = lastMessage.isCurrentUser ? "You" : (lastMessage.sender?.displayName ?? lastMessage.sender?.username) ?? "Someone";
 
     if (lastMessage.type === "image") return `${senderPrefix}: 📷 Photo`;
     if (lastMessage.type === "video") return `${senderPrefix}: 🎥 Video`;
@@ -58,7 +58,7 @@ const getPreview = (conversation: Conversation) => {
 const ConversationAvatar = ({ conversation }: { conversation: Conversation }) => {
     const name = getConversationName(conversation);
     const otherMember = conversation.members.find((member) => member._id !== conversation.currentUserId);
-    const imageUrl = conversation.isGroup ? conversation.imageUrl ?? "" : otherMember?.imageUrl ?? "";
+    const imageUrl = conversation.isGroup ? conversation.imageUrl ?? "" : otherMember?.customImageUrl ?? otherMember?.imageUrl ?? "";
 
     return (
         <Avatar>

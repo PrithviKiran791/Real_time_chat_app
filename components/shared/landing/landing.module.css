@@ -1,0 +1,148 @@
+/* Landing page decorative animations.
+   Kept as a CSS module so it stays scoped to the marketing page and never
+   leaks into the authenticated app's theme. */
+
+@keyframes floatCloud {
+  0% {
+    transform: translateX(-6%) translateY(0);
+  }
+  50% {
+    transform: translateX(4%) translateY(-2%);
+  }
+  100% {
+    transform: translateX(-6%) translateY(0);
+  }
+}
+
+@keyframes floatCloudReverse {
+  0% {
+    transform: translateX(5%) translateY(0);
+  }
+  50% {
+    transform: translateX(-5%) translateY(2%);
+  }
+  100% {
+    transform: translateX(5%) translateY(0);
+  }
+}
+
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.4);
+  }
+}
+
+@keyframes dashFlow {
+  to {
+    stroke-dashoffset: -200;
+  }
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatParticle {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-14px);
+    opacity: 1;
+  }
+}
+
+.cloud {
+  animation: floatCloud 22s ease-in-out infinite;
+  will-change: transform;
+}
+
+.cloudReverse {
+  animation: floatCloudReverse 28s ease-in-out infinite;
+  will-change: transform;
+}
+
+.globeSpin {
+  animation: spinSlow 90s linear infinite;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.globeSpinSlow {
+  animation: spinSlow 140s linear infinite reverse;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.node {
+  animation: pulseGlow 3.2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.dashLine {
+  stroke-dasharray: 6 10;
+  animation: dashFlow 6s linear infinite;
+}
+
+.gradientText {
+  background-size: 200% 200%;
+  animation: gradientMove 8s ease infinite;
+}
+
+.fadeInUp {
+  animation: fadeInUp 0.7s ease both;
+}
+
+.particle {
+  animation: floatParticle 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud,
+  .cloudReverse,
+  .globeSpin,
+  .globeSpinSlow,
+  .node,
+  .dashLine,
+  .gradientText,
+  .fadeInUp,
+  .particle {
+    animation: none !important;
+  }
+}

@@ -3,12 +3,29 @@ import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/s
 import type { Doc, Id } from "./_generated/dataModel";
 import { getCurrentUser, getCurrentUserOrNull } from "./_utils";
 
+type MemberInfo = {
+  _id: Id<"users">;
+  username: string;
+  imageUrl: string;
+  email: string;
+  displayName: string | undefined;
+  customImageUrl: string | undefined;
+};
+
+type SenderInfo = {
+  _id: Id<"users">;
+  username: string;
+  imageUrl: string;
+  displayName: string | undefined;
+  customImageUrl: string | undefined;
+};
+
 type ConversationWithDetails = Doc<"conversations"> & {
   currentUserId: Id<"users">;
-  members: Array<Pick<Doc<"users">, "_id" | "username" | "imageUrl" | "email">>;
+  members: Array<MemberInfo>;
   lastMessage:
     | (Doc<"messages"> & {
-        sender: Pick<Doc<"users">, "_id" | "username" | "imageUrl"> | null;
+        sender: SenderInfo | null;
         isCurrentUser: boolean;
       })
     | null;
@@ -62,6 +79,8 @@ const getConversationWithDetails = async (
           username: user.username,
           imageUrl: user.imageUrl,
           email: user.email,
+          displayName: user.displayName,
+          customImageUrl: user.customImageUrl,
         };
       }),
     )
@@ -99,6 +118,8 @@ const getConversationWithDetails = async (
                 _id: sender._id,
                 username: sender.username,
                 imageUrl: sender.imageUrl,
+                displayName: sender.displayName,
+                customImageUrl: sender.customImageUrl,
               }
             : null,
         }
@@ -276,6 +297,8 @@ export const messages = query({
                 _id: sender._id,
                 username: sender.username,
                 imageUrl: sender.imageUrl,
+                displayName: sender.displayName,
+                customImageUrl: sender.customImageUrl,
               }
             : null,
           readBy,

@@ -124,6 +124,8 @@ export const get = query({
           username: user?.username ?? "Unknown User",
           imageUrl: user?.imageUrl ?? "",
           email: user?.email ?? "",
+          displayName: user?.displayName,
+          customImageUrl: user?.customImageUrl,
           role: record.role,
         };
       })
@@ -140,6 +142,8 @@ export const get = query({
             username: owner.username,
             imageUrl: owner.imageUrl,
             email: owner.email,
+            displayName: owner.displayName,
+            customImageUrl: owner.customImageUrl,
           }
         : null,
       members,

@@ -33,6 +33,8 @@ async function getRequestWithSender(ctx: QueryCtx, request: Doc<"requests">) {
       username: sender.username,
       imageUrl: sender.imageUrl,
       email: sender.email,
+      displayName: sender.displayName,
+      customImageUrl: sender.customImageUrl,
     },
   };
 }

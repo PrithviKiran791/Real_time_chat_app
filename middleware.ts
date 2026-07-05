@@ -1,7 +1,9 @@
 import { clerkMiddleware, createRouteMatcher} from '@clerk/nextjs/server'; 
  
 const isProtectedRoute = createRouteMatcher([ '/(.*)', ]);
-const isPublicRoute = createRouteMatcher(['/api/uploadthing']) 
+// The landing page ('/') is public so signed-out visitors can view it.
+// Everything else (including /api/uploadthing) keeps its existing behavior.
+const isPublicRoute = createRouteMatcher(['/api/uploadthing', '/']) 
  
 export default clerkMiddleware(async (auth, req) =>
     { 

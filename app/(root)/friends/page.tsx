@@ -44,7 +44,9 @@ const FriendsPage = () => {
                 key={friend._id}
                 id={friend._id}
                 imageUrl={friend.imageUrl}
+                customImageUrl={friend.customImageUrl}
                 username={friend.username}
+                displayName={friend.displayName}
                 email={friend.email}
                 conversationId={friend.conversationId}
             />

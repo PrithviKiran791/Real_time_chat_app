@@ -12,19 +12,23 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
+import { UserProfileDialog } from "@/components/shared/profile/UserProfileDialog";
 
 type Props = {
     id: Id<"users">;
     imageUrl: string;
+    customImageUrl?: string;
     username: string;
+    displayName?: string;
     email: string;
     conversationId: Id<"conversations">;
 };
 
-const FriendItem = ({ id, imageUrl, username, email, conversationId }: Props) => {
+const FriendItem = ({ id, imageUrl, customImageUrl, username, displayName, email, conversationId }: Props) => {
     const router = useRouter();
     const { conversationId: activeConversationId } = useConversation();
     const [open, setOpen] = useState(false);
+    const [profileOpen, setProfileOpen] = useState(false);
     const [error, setError] = useState("");
     const { mutate: removeFriend, pending } = useMutationState(api.friends.remove);
 
@@ -46,15 +50,27 @@ const FriendItem = ({ id, imageUrl, username, email, conversationId }: Props) =>
     return (
         <Card className="flex w-full flex-row items-center justify-between gap-3 p-2">
             <Link href={`/conversations/${conversationId}`} className="flex min-w-0 flex-1 items-center gap-3">
-                <Avatar>
-                    <AvatarImage src={imageUrl} alt={username} />
+                <Avatar 
+                    className="cursor-pointer transition-transform hover:scale-105 shrink-0"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setProfileOpen(true);
+                    }}
+                >
+                    <AvatarImage src={customImageUrl ?? imageUrl} alt={displayName ?? username} />
                     <AvatarFallback><User className="size-4" /></AvatarFallback>
                 </Avatar>
                 <div className="flex min-w-0 flex-col">
-                    <h4 className="truncate font-medium">{username}</h4>
+                    <h4 className="truncate font-medium">{displayName ?? username}</h4>
                     <p className="truncate text-xs text-muted-foreground">{email}</p>
                 </div>
             </Link>
+            <UserProfileDialog
+                userId={id}
+                open={profileOpen}
+                onOpenChange={setProfileOpen}
+            />
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                     <Button type="button" size="icon" variant="ghost" aria-label={`Manage ${username}`}>

@@ -57,6 +57,8 @@ export const list = query({
           username: friend.username,
           email: friend.email,
           imageUrl: friend.imageUrl,
+          displayName: friend.displayName,
+          customImageUrl: friend.customImageUrl,
           conversationId: friendship.conversationId,
         };
       }),
