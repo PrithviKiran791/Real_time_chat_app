@@ -1,6 +1,6 @@
-# 🌐 ChatSphere — Production-Grade Real-Time Communication Platform
+# 🌐 ChatSphere — Real-Time Communication Platform
 
-ChatSphere is a modern, enterprise-ready real-time communication platform combining instant messaging, media collaboration, online presence, and HD audio/video calling powered by **Next.js 16 (App Router + Turbopack)**, **React 19**, **Convex Reactive Backend**, **LiveKit WebRTC Cloud**, **Clerk Authentication**, and **UploadThing**.
+ChatSphere is a modern, real-time communication platform combining instant messaging, media collaboration, online presence, and HD audio/video calling powered by **Next.js 16 (App Router + Turbopack)**, **React 19**, **Convex Reactive Backend**, **LiveKit WebRTC Cloud**, **Clerk Authentication**, and **UploadThing**.
 
 ---
 
