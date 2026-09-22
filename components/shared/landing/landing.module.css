@@ -80,6 +80,13 @@
   animation: subtleGlow 6s ease-in-out infinite;
 }
 
+@media (max-width: 768px) {
+  .heroGlow {
+    animation: none !important;
+    opacity: 0.4 !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fadeInUp,
   .fadeIn,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Show } from "@clerk/nextjs";
@@ -7,25 +8,35 @@ import { Button } from "@/components/ui/button";
 import { Button as MovingBorderButton } from "@/components/ui/moving-border";
 import { TypewriterEffectSmooth } from "@/components/ui/typewriter-effect";
 import HeroGlobe from "./Globe";
+import NetworkVisual from "./NetworkVisual";
 import styles from "./landing.module.css";
 
 const Hero = () => {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 1024);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   return (
     <section
       id="home"
       className={`${styles.heroGrid} relative flex min-h-190 w-full items-center overflow-hidden bg-transparent pb-16 pt-28 sm:min-h-screen lg:pt-32`}
     >
-      {/* Atmospheric depth */}
+      {/* Atmospheric depth — optimized for mobile */}
       <div
-        className={`${styles.heroGlow} pointer-events-none absolute left-1/2 top-1/3 h-125 w-125 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2563EB]/10 blur-[120px]`}
+        className={`${styles.heroGlow} pointer-events-none absolute left-1/2 top-1/3 h-64 w-64 md:h-125 md:w-125 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2563EB]/10 blur-2xl md:blur-[120px]`}
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute -right-32 top-20 h-72 w-72 rounded-full bg-[#0B2A5B]/40 blur-[80px]"
+        className="pointer-events-none absolute -right-32 top-20 h-72 w-72 rounded-full bg-[#0B2A5B]/40 blur-[80px] hidden md:block"
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute -left-24 bottom-32 h-64 w-64 rounded-full bg-[#2563EB]/8 blur-[60px]"
+        className="pointer-events-none absolute -left-24 bottom-32 h-64 w-64 rounded-full bg-[#2563EB]/8 blur-[60px] hidden md:block"
         aria-hidden="true"
       />
 
@@ -119,9 +130,13 @@ const Hero = () => {
           style={{ animationDelay: "0.2s" }}
         >
           <div className="relative mx-auto aspect-square w-full max-w-105 sm:max-w-120 lg:ml-auto lg:max-w-140">
-            <div className="absolute inset-0 rounded-full bg-[#2563EB]/5 blur-3xl" />
-            <div className="relative h-full w-full min-h-70 sm:min-h-90 lg:min-h-120">
-              <HeroGlobe className="h-full w-full" />
+            <div className="absolute inset-0 rounded-full bg-[#2563EB]/5 blur-2xl lg:blur-3xl" />
+            <div className="relative flex h-full w-full min-h-70 sm:min-h-90 lg:min-h-120 items-center justify-center">
+              {isDesktop ? (
+                <HeroGlobe className="h-full w-full" />
+              ) : (
+                <NetworkVisual />
+              )}
             </div>
           </div>
           <div className="mt-4 flex items-center justify-center gap-2 text-center text-xs font-medium uppercase tracking-[0.16em] text-[#64748B] lg:justify-end">

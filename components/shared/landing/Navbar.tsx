@@ -24,7 +24,7 @@ const Navbar = () => {
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6">
       <nav
-            className={`${styles.navbarEnter} mx-auto flex max-w-6xl items-center justify-between rounded-2xl border border-white/10 bg-[#061A3A]/85 px-4 py-2.5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:px-5`}
+        className={`${styles.navbarEnter} mx-auto flex max-w-6xl items-center justify-between rounded-2xl border border-white/10 bg-[#061A3A]/95 md:bg-[#061A3A]/85 px-4 py-2.5 shadow-2xl shadow-black/30 md:backdrop-blur-xl sm:px-5`}
         aria-label="Primary"
       >
         <Link
@@ -94,7 +94,7 @@ const Navbar = () => {
       </nav>
 
       {open && (
-        <div className="mx-auto mt-2 max-w-5xl rounded-2xl border border-white/10 bg-[#061A3A]/95 p-4 shadow-xl backdrop-blur-md lg:hidden">
+        <div className="mx-auto mt-2 max-w-5xl rounded-2xl border border-white/10 bg-[#061A3A] p-4 shadow-xl lg:hidden">
           <ul className="flex flex-col gap-0.5">
             {navItems.map((item) => (
               <li key={item.href}>
