@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useLayoutEffect, useRef, useMemo } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -15,7 +15,7 @@ interface MessageListProps {
   onSelectUser: (userId: Id<"users">) => void;
 }
 
-export const MessageList: React.FC<MessageListProps> = ({
+export const MessageList = React.memo<MessageListProps>(({
   conversationId,
   isGroup,
   onReply,
@@ -75,7 +75,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   }, [messages]);
 
   // Handle scroll near top to load more
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
     const { scrollTop } = containerRef.current;
 
@@ -85,13 +85,13 @@ export const MessageList: React.FC<MessageListProps> = ({
       prevScrollTopRef.current = containerRef.current.scrollTop;
       loadMore(20);
     }
-  };
+  }, [status, isLoading, loadMore]);
 
   return (
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto px-1 py-4 flex flex-col space-y-1 overscroll-contain"
+      className="flex-1 overflow-y-auto px-1 py-4 flex flex-col space-y-1 overscroll-contain touch-pan-y will-change-scroll"
     >
       {/* Top status indicator: Loading older messages or Start of Conversation */}
       <div className="py-3 flex justify-center text-xs text-muted-foreground">
@@ -145,4 +145,6 @@ export const MessageList: React.FC<MessageListProps> = ({
       })}
     </div>
   );
-};
+});
+
+export default MessageList;

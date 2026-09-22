@@ -60,14 +60,15 @@ interface MessageItemProps {
   onSelectUser: (userId: Id<"users">) => void;
 }
 
-export const MessageItem: React.FC<MessageItemProps> = ({
-  message,
-  previousMessage,
-  isGroup,
-  onReply,
-  onEdit,
-  onSelectUser,
-}) => {
+export const MessageItem = React.memo<MessageItemProps>(
+  ({
+    message,
+    previousMessage,
+    isGroup,
+    onReply,
+    onEdit,
+    onSelectUser,
+  }) => {
   const [isHovered, setIsHovered] = useState(false);
   const toggleReactionMutation = useMutation(api.messages.toggleReaction);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -187,6 +188,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchEnd}
       className={cn(
         "group relative flex items-end gap-2 px-4 transition-colors",
         message.isCurrentUser ? "justify-end" : "justify-start",
@@ -387,4 +389,17 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       )}
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.message._id === nextProps.message._id &&
+    prevProps.message._creationTime === nextProps.message._creationTime &&
+    prevProps.message.isEdited === nextProps.message.isEdited &&
+    prevProps.message.deletedAt === nextProps.message.deletedAt &&
+    prevProps.message.content[0] === nextProps.message.content[0] &&
+    prevProps.message.reactions?.length === nextProps.message.reactions?.length &&
+    prevProps.message.readBy?.length === nextProps.message.readBy?.length &&
+    prevProps.previousMessage?._id === nextProps.previousMessage?._id &&
+    prevProps.previousMessage?.senderId === nextProps.previousMessage?.senderId &&
+    prevProps.isGroup === nextProps.isGroup
+  );
+});

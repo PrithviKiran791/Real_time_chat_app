@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useMutation, useQuery } from "convex/react";
 import {
   Send,
@@ -149,10 +149,19 @@ const ActiveConversation = () => {
     }
   };
 
-  const handleStartEdit = (message: EnrichedMessage) => {
+  const handleStartEdit = useCallback((message: EnrichedMessage) => {
     setEditingMessage(message);
     setEditText(message.content[0] || "");
-  };
+  }, []);
+
+  const handleReply = useCallback((msg: EnrichedMessage) => {
+    setReplyingTo(msg);
+    inputRef.current?.focus();
+  }, []);
+
+  const handleSelectUser = useCallback((userId: Id<"users">) => {
+    setSelectedUserId(userId);
+  }, []);
 
   const handleSaveEdit = async () => {
     if (!editingMessage) return;
@@ -322,19 +331,16 @@ const ActiveConversation = () => {
           <MessageList
             conversationId={typedConversationId}
             isGroup={conversation.isGroup}
-            onReply={(msg) => {
-              setReplyingTo(msg);
-              inputRef.current?.focus();
-            }}
+            onReply={handleReply}
             onEdit={handleStartEdit}
-            onSelectUser={(userId) => setSelectedUserId(userId)}
+            onSelectUser={handleSelectUser}
           />
 
           {/* Real-Time Typing Indicator */}
           <TypingIndicator typingUsers={typingUsers} />
 
           {/* Message Composer Area */}
-          <div className="border-t bg-background/95 backdrop-blur-xs p-3">
+          <div className="border-t bg-background/95 backdrop-blur-xs p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             {/* Reply Preview Banner */}
             {replyingTo && (
               <div className="mb-2 flex items-center justify-between rounded-lg border border-border/60 bg-muted/40 px-3 py-1.5 text-xs">
@@ -375,7 +381,7 @@ const ActiveConversation = () => {
                   disabled={sending}
                   rows={1}
                   placeholder="Type a message..."
-                  className="min-h-9 max-h-32 flex-1 resize-none rounded-xl border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="min-h-9 max-h-32 flex-1 resize-none rounded-xl border border-input bg-transparent px-3 py-2 text-base sm:text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50"
                 />
 
                 <Button

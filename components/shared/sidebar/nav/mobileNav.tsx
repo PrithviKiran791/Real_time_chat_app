@@ -17,7 +17,7 @@ const MobileNav = () => {
     if (isActive) return null;
 
     return (
-        <Card className="fixed bottom-4 left-4 right-4 z-50 h-16 p-2 lg:hidden border-slate-200/80 bg-white/90 dark:border-white/10 dark:bg-[#071A35]/90 backdrop-blur-xl shadow-xl">
+        <Card className="fixed bottom-3 left-3 right-3 z-50 h-16 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden border-slate-200/80 bg-white/95 dark:border-white/10 dark:bg-[#071A35]/95 shadow-xl">
             <nav className="flex h-full items-center justify-between gap-2">
                 {paths.map((path) => (
                     <Button

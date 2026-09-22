@@ -6,7 +6,7 @@ interface TypingIndicatorProps {
   typingUsers: Array<{ _id: string; username: string }>;
 }
 
-export const TypingIndicator: React.FC<TypingIndicatorProps> = ({ typingUsers }) => {
+export const TypingIndicator = React.memo<TypingIndicatorProps>(({ typingUsers }) => {
   if (!typingUsers || typingUsers.length === 0) return null;
 
   let text = "";
@@ -30,4 +30,4 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({ typingUsers })
       </div>
     </div>
   );
-};
+});
