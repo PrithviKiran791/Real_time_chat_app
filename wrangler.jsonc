@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "chatsphere",
+  "name": "real-time-chat-app",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-09-21",
   "compatibility_flags": [
@@ -13,7 +13,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "chatsphere"
+      "service": "real-time-chat-app"
     }
   ],
   "observability": {
