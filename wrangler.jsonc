@@ -18,5 +18,12 @@
   ],
   "observability": {
     "enabled": true
+  },
+  "vars": {
+    "NEXT_PUBLIC_CONVEX_URL": "https://energized-quail-794.convex.cloud",
+    "NEXT_PUBLIC_CONVEX_SITE_URL": "https://energized-quail-794.convex.site",
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_c2V0LXNwYXJyb3ctNTAuY2xlcmsuYWNjb3VudHMuZGV2JA",
+    "LIVEKIT_URL": "wss://my-real-time-app-xvllilxh.livekit.cloud",
+    "NEXT_PUBLIC_LIVEKIT_URL": "wss://my-real-time-app-xvllilxh.livekit.cloud"
   }
 }
