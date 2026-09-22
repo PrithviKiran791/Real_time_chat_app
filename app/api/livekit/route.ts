@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
         // Retrieve Clerk token representing the Convex JWT identity template
         const convexToken = await getToken({ template: "convex" });
-        const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+        const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL || "https://placeholder.convex.cloud");
         if (convexToken) {
             convex.setAuth(convexToken);
         }
