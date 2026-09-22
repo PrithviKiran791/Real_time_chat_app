@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Id } from "@/convex/_generated/dataModel";
 import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
 
         // Verify membership by querying the conversation (this query checks access)
         const conversation = await convex.query(api.conversations.get, {
-            id: conversationId as any,
+            id: conversationId as Id<"conversations">,
         });
 
         if (!conversation) {

@@ -20,7 +20,7 @@ export default function Home() {
   // redirected to their dashboard.
   if (!isLoaded || isSignedIn) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-white">
+      <div className="flex h-screen w-full items-center justify-center bg-[#020617]">
         <LoadingLogo size={100} />
       </div>
     );

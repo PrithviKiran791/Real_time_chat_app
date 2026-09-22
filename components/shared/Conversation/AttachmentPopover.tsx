@@ -165,22 +165,24 @@ const AttachmentPopover = ({ disabled, conversationId }: AttachmentPopoverProps)
             <Popover open={open} onOpenChange={setOpen}>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <PopoverTrigger asChild>
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                disabled={isDisabled}
-                                aria-label="Add attachment"
-                                className="shrink-0 text-muted-foreground hover:text-foreground"
-                            >
-                                {uploading ? (
-                                    <Loader2 className="size-4 animate-spin" />
-                                ) : (
-                                    <Paperclip className="size-4" />
-                                )}
-                            </Button>
-                        </PopoverTrigger>
+                        <span className="inline-block shrink-0">
+                            <PopoverTrigger asChild>
+                                <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    disabled={isDisabled}
+                                    aria-label="Add attachment"
+                                    className="shrink-0 text-muted-foreground hover:text-foreground"
+                                >
+                                    {uploading ? (
+                                        <Loader2 className="size-4 animate-spin" />
+                                    ) : (
+                                        <Paperclip className="size-4" />
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                        </span>
                     </TooltipTrigger>
                     <TooltipContent side="top">
                         {uploading ? "Uploading…" : "Attachment"}

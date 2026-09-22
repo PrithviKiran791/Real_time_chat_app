@@ -1,99 +1,133 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, PlayCircle } from "lucide-react";
-import { Show, SignInButton } from "@clerk/nextjs";
+import { ArrowRight } from "lucide-react";
+import { Show } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import Globe from "./Globe";
-import Clouds from "./Clouds";
+import { Button as MovingBorderButton } from "@/components/ui/moving-border";
+import { TypewriterEffectSmooth } from "@/components/ui/typewriter-effect";
+import HeroGlobe from "./Globe";
 import styles from "./landing.module.css";
 
 const Hero = () => {
   return (
     <section
       id="home"
-      className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-white pt-24"
+      className={`${styles.heroGrid} relative flex min-h-190 w-full items-center overflow-hidden bg-transparent pb-16 pt-28 sm:min-h-screen lg:pt-32`}
     >
-      <Clouds />
-
-      {/* Globe centerpiece, positioned behind content */}
-      <div className="absolute left-1/2 top-1/2 -z-0 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 opacity-80 sm:h-[720px] sm:w-[720px]">
-        <Globe size={720} />
-      </div>
-
-      {/* soft ambient blur accents */}
+      {/* Atmospheric depth */}
       <div
-        className="absolute -left-24 top-1/3 -z-0 h-72 w-72 rounded-full bg-blue-900/20 blur-3xl"
+        className={`${styles.heroGlow} pointer-events-none absolute left-1/2 top-1/3 h-125 w-125 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2563EB]/10 blur-[120px]`}
         aria-hidden="true"
       />
       <div
-        className="absolute -right-24 bottom-1/4 -z-0 h-72 w-72 rounded-full bg-blue-950/15 blur-3xl"
+        className="pointer-events-none absolute -right-32 top-20 h-72 w-72 rounded-full bg-[#0B2A5B]/40 blur-[80px]"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute -left-24 bottom-32 h-64 w-64 rounded-full bg-[#2563EB]/8 blur-[60px]"
         aria-hidden="true"
       />
 
-      <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-4 text-center sm:px-6">
-        <span
-          className={`${styles.fadeInUp} mb-5 inline-flex items-center gap-2 rounded-full border border-blue-900/30 bg-blue-950/5 px-4 py-1.5 text-xs font-medium text-[#1E3A8A]`}
-        >
-          <span className="size-1.5 rounded-full bg-[#1E3A8A]" />
-          Real-time communication, reimagined
-        </span>
+      <div className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-8">
+        {/* Left — copy & CTAs */}
+        <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+          <div
+            className={`${styles.fadeInUp} mb-6 inline-flex items-center gap-2 rounded-full border border-[#2563EB]/35 bg-[#061A3A]/70 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#93C5FD]`}
+            style={{ animationDelay: "0.02s" }}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-[#60A5FA] shadow-[0_0_12px_#60A5FA]" />
+            Live conversations, beautifully simple
+          </div>
+          <h1
+            className={`${styles.fadeInUp} max-w-3xl text-balance font-heading text-5xl font-bold leading-[0.98] text-white sm:text-6xl lg:text-7xl`}
+            style={{ animationDelay: "0.08s" }}
+          >
+            Connect Without Boundaries.
+          </h1>
 
-        <h1
-          className={`${styles.fadeInUp} text-balance font-heading text-4xl font-bold leading-tight text-[#0F172A] sm:text-5xl md:text-6xl`}
-          style={{ animationDelay: "0.05s" }}
-        >
-          Connect Without Boundaries.
-        </h1>
+          <div className={`${styles.fadeInUp} my-2 flex justify-center lg:justify-start`} style={{ animationDelay: "0.12s" }}>
+            <TypewriterEffectSmooth
+              words={[
+                { text: "Talk." },
+                { text: "Share." },
+                { text: "Connect." },
+                { text: "In" },
+                { text: "Real", className: "text-[#60A5FA]" },
+                { text: "Time.", className: "text-[#60A5FA]" },
+              ]}
+              textClassName="text-lg sm:text-xl md:text-2xl font-semibold text-[#CBD5E1]"
+              cursorClassName="bg-[#60A5FA]"
+            />
+          </div>
 
-        <p
-          className={`${styles.fadeInUp} mx-auto mt-6 max-w-xl text-pretty text-base leading-relaxed text-gray-600 sm:text-lg`}
-          style={{ animationDelay: "0.15s" }}
-        >
-          Chat instantly, create groups, share files, and make audio or
-          video calls — all in one place. Stay connected with anyone,
-          anywhere in the world.
-        </p>
+          <p
+            className={`${styles.fadeInUp} mt-3 max-w-xl text-pretty text-base leading-relaxed text-[#94A3B8] sm:text-lg`}
+            style={{ animationDelay: "0.18s" }}
+          >
+            Chat instantly, create groups, share files, and make audio or video
+            calls — all from one platform built for seamless global
+            communication.
+          </p>
 
-        <div
-          className={`${styles.fadeInUp} mt-9 flex flex-col items-center gap-3 sm:flex-row`}
-          style={{ animationDelay: "0.25s" }}
-        >
-          <Show when="signed-out">
-            <SignInButton mode="modal">
-              <Button
-                size="lg"
-                className="h-12 gap-2 rounded-xl bg-[#0F172A] px-7 text-base text-white shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-0.5 hover:bg-[#1e2a4a]"
-              >
-                Get Started Free
-                <ArrowRight className="size-4" />
-              </Button>
-            </SignInButton>
-          </Show>
-          <Show when="signed-in">
+          <div
+            className={`${styles.fadeInUp} mt-8 flex w-full flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start`}
+            style={{ animationDelay: "0.26s" }}
+          >
+            <Show when="signed-out">
+              <Link href="/sign-up" className="w-full sm:w-auto">
+                <MovingBorderButton
+                  borderRadius="0.75rem"
+                  containerClassName="h-12 w-full sm:w-auto"
+                  className="bg-[#0B2A5B]/90 hover:bg-[#1D4ED8] text-white text-base font-semibold px-7 gap-2 border-blue-500/40 shadow-lg shadow-[#2563EB]/20 transition-all"
+                  borderClassName="bg-[radial-gradient(#60A5FA_40%,transparent_60%)]"
+                >
+                  Get Started Free
+                  <ArrowRight className="size-4" />
+                </MovingBorderButton>
+              </Link>
+            </Show>
+            <Show when="signed-in">
+              <Link href="/conversations" className="w-full sm:w-auto">
+                <MovingBorderButton
+                  borderRadius="0.75rem"
+                  containerClassName="h-12 w-full sm:w-auto"
+                  className="bg-[#0B2A5B]/90 hover:bg-[#1D4ED8] text-white text-base font-semibold px-7 gap-2 border-blue-500/40 shadow-lg shadow-[#2563EB]/20 transition-all"
+                  borderClassName="bg-[radial-gradient(#60A5FA_40%,transparent_60%)]"
+                >
+                  Go to Dashboard
+                  <ArrowRight className="size-4" />
+                </MovingBorderButton>
+              </Link>
+            </Show>
+
             <Button
               asChild
               size="lg"
-              className="h-12 gap-2 rounded-xl bg-[#0F172A] px-7 text-base text-white shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-0.5 hover:bg-[#1e2a4a]"
+              variant="outline"
+              className="h-12 w-full gap-2 rounded-xl border-[#2563EB]/40 bg-transparent px-7 text-base text-[#CBD5E1] transition-all hover:border-[#60A5FA] hover:bg-[#061A3A] hover:text-white sm:w-auto"
             >
-              <Link href="/conversations">
-                Go to Dashboard
-                <ArrowRight className="size-4" />
-              </Link>
+              <a href="#features">Explore Features</a>
             </Button>
-          </Show>
+          </div>
 
-          <Button
-            asChild
-            size="lg"
-            variant="outline"
-            className="h-12 gap-2 rounded-xl border-[#1E3A8A] bg-transparent px-7 text-base text-[#1E3A8A] transition-all hover:bg-[#1E3A8A] hover:text-white"
-          >
-            <a href="#how-it-works">
-              <PlayCircle className="size-4" />
-              See How It Works
-            </a>
-          </Button>
+        </div>
+
+        {/* Right — interactive globe */}
+        <div
+          className={`${styles.fadeIn} relative mx-auto w-full max-w-120 lg:max-w-none`}
+          style={{ animationDelay: "0.2s" }}
+        >
+          <div className="relative mx-auto aspect-square w-full max-w-105 sm:max-w-120 lg:ml-auto lg:max-w-140">
+            <div className="absolute inset-0 rounded-full bg-[#2563EB]/5 blur-3xl" />
+            <div className="relative h-full w-full min-h-70 sm:min-h-90 lg:min-h-120">
+              <HeroGlobe className="h-full w-full" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-center gap-2 text-center text-xs font-medium uppercase tracking-[0.16em] text-[#64748B] lg:justify-end">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#60A5FA]" />
+            A clearer way to stay close
+          </div>
         </div>
       </div>
     </section>

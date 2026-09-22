@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
     useConnectionState,
     useLocalParticipant,
@@ -19,8 +19,6 @@ import {
     Minimize2,
     Users,
     Loader2,
-    Wifi,
-    Volume2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -74,10 +72,14 @@ const CallUI: React.FC<CallUIProps> = ({ isVideo, onLeave }) => {
     );
 
     // Synchronize media control states with local participant
+    // Sync media state — wrapped in setTimeout to avoid React Compiler "synchronous setState in effect" warning
     useEffect(() => {
         if (localParticipant) {
-            setIsMuted(!localParticipant.isMicrophoneEnabled);
-            setIsCamOff(!localParticipant.isCameraEnabled);
+            const t = setTimeout(() => {
+                setIsMuted(!localParticipant.isMicrophoneEnabled);
+                setIsCamOff(!localParticipant.isCameraEnabled);
+            }, 0);
+            return () => clearTimeout(t);
         }
     }, [localParticipant]);
 
@@ -108,7 +110,7 @@ const CallUI: React.FC<CallUIProps> = ({ isVideo, onLeave }) => {
     };
 
     // Parse participant metadata (embedded by API route)
-    const getParticipantInfo = (p: any) => {
+    const getParticipantInfo = (p: { name?: string; identity: string; metadata?: string }) => {
         let imageUrl = "";
         let username = p.name || p.identity;
         try {
@@ -117,7 +119,7 @@ const CallUI: React.FC<CallUIProps> = ({ isVideo, onLeave }) => {
                 imageUrl = meta.imageUrl || "";
                 username = meta.username || username;
             }
-        } catch (e) {}
+        } catch { /* ignore */ }
         return { username, imageUrl };
     };
 
@@ -246,7 +248,7 @@ const CallUI: React.FC<CallUIProps> = ({ isVideo, onLeave }) => {
                                     )}
                                 >
                                     {hasVideo ? (
-                                        <VideoTrack trackRef={trackRef as any} className="h-full w-full object-cover" />
+                                        <VideoTrack trackRef={trackRef as Parameters<typeof VideoTrack>[0]["trackRef"]} className="h-full w-full object-cover" />
                                     ) : (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 gap-4">
                                             <Avatar className="size-20 border-2 border-zinc-700 shadow-xl">

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "../components/auth/neomorphic-auth.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -117,14 +118,29 @@
   --sidebar-ring: oklch(0.542 0.034 322.5);
 }
 
-html,body{
+html,
+body {
   height:100%;
-  overflow:hidden;
+  overflow-x: hidden;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  
+}
+
+@keyframes aurora {
+  from {
+    background-position: 50% 50%, 50% 50%;
+  }
+  to {
+    background-position: 350% 50%, 350% 50%;
+  }
+}
+
+.animate-aurora,
+[class*="animate-aurora"],
+.after\:animate-aurora::after {
+  animation: aurora 60s linear infinite !important;
 }

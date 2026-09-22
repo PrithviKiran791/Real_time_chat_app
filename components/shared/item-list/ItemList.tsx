@@ -14,9 +14,9 @@ const ItemList = ({ children, title, action }: Props) => {
     const { isActive } = useConversation();
 
     return (
-        <Card className={cn("hidden h-full w-full p-2 lg:flex-none lg:w-80", { block: !isActive, "lg:block": isActive })}>
+        <Card className={cn("hidden h-full w-full p-2 lg:flex-none lg:w-80 border-slate-200/80 bg-white/80 dark:border-white/10 dark:bg-[#071A35]/75 backdrop-blur-xl shadow-xl", { block: !isActive, "lg:block": isActive })}>
             <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">{title}</h2>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h2>
                 {action ?? null}
             </div>
             <div className="flex h-full flex-col gap-2 overflow-y-auto">

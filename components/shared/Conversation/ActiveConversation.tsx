@@ -2,418 +2,456 @@
 
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { Send, User, Users, MoreVertical, Check, CheckCheck, Phone, Video, PhoneOff } from "lucide-react";
+import {
+  Send,
+  Users,
+  MoreVertical,
+  Phone,
+  Video,
+  ArrowLeft,
+  X,
+  Edit2,
+} from "lucide-react";
+import Link from "next/link";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Avatar, AvatarFallback, AvatarImage, AvatarBadge } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { useConversation } from "@/convex/hooks/useConversation";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import ViewMembersDialog from "./ViewMembersDialog";
 import LeaveGroupDialog from "./LeaveGroupDialog";
 import DeleteGroupDialog from "./DeleteGroupDialog";
 import AttachmentPopover from "./AttachmentPopover";
 import EmojiPickerButton from "./EmojiPickerButton";
-import ImageMessage from "./messages/ImageMessage";
-import VideoMessage from "./messages/VideoMessage";
-import FileMessage from "./messages/FileMessage";
 import { useCall } from "@/components/shared/CallProvider";
 import CallScreen from "./CallScreen";
 import { UserProfileDialog } from "@/components/shared/profile/UserProfileDialog";
-
-
-const formatMessageTime = (timestamp: number) => {
-    return new Intl.DateTimeFormat(undefined, {
-        hour: "numeric",
-        minute: "2-digit",
-    }).format(new Date(timestamp));
-};
+import { MessageList } from "./MessageList";
+import { TypingIndicator } from "./TypingIndicator";
+import { PresenceIndicator } from "./PresenceIndicator";
+import { useTyping } from "@/hooks/useTyping";
+import type { EnrichedMessage } from "./MessageItem";
+import { toast } from "sonner";
 
 const ActiveConversation = () => {
-    const { conversationId } = useConversation();
-    const typedConversationId = conversationId as Id<"conversations">;
-    const conversation = useQuery(
-        api.conversations.get,
-        conversationId ? { id: typedConversationId } : "skip",
-    );
-    const messages = useQuery(
-        api.conversations.messages,
-        conversationId ? { conversationId: typedConversationId } : "skip",
-    );
-    const sendMessage = useMutation(api.conversations.sendMessage);
-    const markAsRead = useMutation(api.conversations.markAsRead);
-    const [body, setBody] = useState("");
-    const [error, setError] = useState("");
-    const [sending, setSending] = useState(false);
-    const [viewMembersOpen, setViewMembersOpen] = useState(false);
-    const [leaveGroupOpen, setLeaveGroupOpen] = useState(false);
-    const [deleteGroupOpen, setDeleteGroupOpen] = useState(false);
-    const [selectedUserId, setSelectedUserId] = useState<Id<"users"> | undefined>(undefined);
-    const inputRef = useRef<HTMLTextAreaElement>(null);
-    const endRef = useRef<HTMLDivElement>(null);
+  const { conversationId } = useConversation();
+  const typedConversationId = conversationId as Id<"conversations">;
 
+  const conversation = useQuery(
+    api.conversations.get,
+    conversationId ? { id: typedConversationId } : "skip"
+  );
 
-    const { activeCall, isConnecting, startCall, joinCall, leaveCall } = useCall();
-    const isUserInCurrentCall = activeCall && activeCall.conversationId === conversationId;
+  const sendMessageMutation = useMutation(api.messages.send);
+  const editMessageMutation = useMutation(api.messages.edit);
+  const markAsRead = useMutation(api.conversations.markAsRead);
 
-    useEffect(() => {
-        if (conversationId && messages && messages.length > 0) {
-            const latestMsg = messages[messages.length - 1];
-            void markAsRead({
-                conversationId: typedConversationId,
-                messageId: latestMsg._id,
-            });
-        }
-    }, [conversationId, messages, markAsRead, typedConversationId]);
+  const [body, setBody] = useState("");
+  const [error, setError] = useState("");
+  const [sending, setSending] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<EnrichedMessage | null>(null);
+  const [editingMessage, setEditingMessage] = useState<EnrichedMessage | null>(null);
+  const [editText, setEditText] = useState("");
 
-    const title = useMemo(() => {
-        if (!conversation) return "";
-        if (conversation.isGroup) return conversation.name ?? "Group conversation";
+  const [viewMembersOpen, setViewMembersOpen] = useState(false);
+  const [leaveGroupOpen, setLeaveGroupOpen] = useState(false);
+  const [deleteGroupOpen, setDeleteGroupOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<Id<"users"> | undefined>(undefined);
 
-        const other = conversation.members.find((member) => member._id !== conversation.currentUserId);
-        return other ? (other.displayName ?? other.username) : "Direct message";
-    }, [conversation]);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const { activeCall, isConnecting, startCall, joinCall, leaveCall } = useCall();
+  const isUserInCurrentCall = activeCall && activeCall.conversationId === conversationId;
 
-    const otherMember = conversation?.members.find((member) => member._id !== conversation.currentUserId);
-    const avatarUrl = conversation?.isGroup
-        ? conversation.imageUrl ?? ""
-        : (otherMember?.customImageUrl ?? otherMember?.imageUrl ?? "");
+  // Typing hook
+  const { typingUsers, handleTyping, stopTyping } = useTyping(typedConversationId);
 
-    useEffect(() => {
-        endRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages?.length, conversationId]);
+  // Mark conversation as read on load
+  useEffect(() => {
+    if (conversationId && conversation) {
+      void markAsRead({ conversationId: typedConversationId }).catch(() => {});
+    }
+  }, [conversationId, conversation, markAsRead, typedConversationId]);
 
-    const handleSubmit = async (event?: FormEvent) => {
-        event?.preventDefault();
-        const content = body.trim();
+  const otherMember = useMemo(() => {
+    if (!conversation) return null;
+    return conversation.members.find((member) => member._id !== conversation.currentUserId);
+  }, [conversation]);
 
-        if (!content) {
-            setError("Message cannot be empty.");
-            return;
-        }
+  const title = useMemo(() => {
+    if (!conversation) return "";
+    if (conversation.isGroup) return conversation.name ?? "Group conversation";
+    return otherMember ? (otherMember.displayName ?? otherMember.username) : "Direct message";
+  }, [conversation, otherMember]);
 
-        setError("");
-        setSending(true);
+  const avatarUrl = conversation?.isGroup
+    ? conversation.imageUrl ?? ""
+    : (otherMember?.customImageUrl ?? otherMember?.imageUrl ?? "");
 
-        try {
-            await sendMessage({ conversationId: typedConversationId, content });
-            setBody("");
-            requestAnimationFrame(() => inputRef.current?.focus());
-        } catch {
-            setError("Failed to send message. Please try again.");
-        } finally {
-            setSending(false);
-        }
-    };
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setBody(e.target.value);
+    handleTyping();
+  };
 
-    const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-        if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            void handleSubmit();
-        }
-    };
+  const handleEmojiSelect = (emoji: string) => {
+    setBody((prev) => prev + emoji);
+    handleTyping();
+    inputRef.current?.focus();
+  };
 
-    const handleEmojiSelect = (emoji: string) => {
-        setBody((prev) => prev + emoji);
-        requestAnimationFrame(() => {
-            const ta = inputRef.current;
-            if (!ta) return;
-            ta.focus();
-            const len = ta.value.length;
-            ta.setSelectionRange(len, len);
-        });
-    };
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void handleSubmit();
+    }
+  };
 
-    if (conversation === undefined || messages === undefined) {
-        return (
-            <div className="flex h-full flex-col">
-                <div className="flex items-center gap-3 border-b p-3">
-                    <div className="size-10 animate-pulse rounded-full bg-muted" />
-                    <div className="flex flex-col gap-2">
-                        <div className="h-4 w-36 animate-pulse rounded bg-muted" />
-                        <div className="h-3 w-24 animate-pulse rounded bg-muted" />
-                    </div>
-                </div>
-                <div className="flex flex-1 flex-col gap-3 overflow-hidden p-3">
-                    {Array.from({ length: 6 }).map((_, index) => (
-                        <div key={index} className={cn("h-12 max-w-[70%] animate-pulse rounded-lg bg-muted", index % 2 && "self-end")} />
-                    ))}
-                </div>
-            </div>
-        );
+  const handleSubmit = async (event?: FormEvent) => {
+    event?.preventDefault();
+    const content = body.trim();
+
+    if (!content) {
+      setError("Message cannot be empty.");
+      return;
     }
 
-    if (!conversation) {
-        return (
-            <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">Conversation unavailable.</p>
-                <p>It may have been deleted or you may no longer have access.</p>
-            </div>
-        );
+    setError("");
+    setSending(true);
+    stopTyping();
+
+    try {
+      await sendMessageMutation({
+        conversationId: typedConversationId,
+        content,
+        type: "text",
+        replyTo: replyingTo ? replyingTo._id : undefined,
+      });
+
+      setBody("");
+      setReplyingTo(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send message.");
+    } finally {
+      setSending(false);
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleStartEdit = (message: EnrichedMessage) => {
+    setEditingMessage(message);
+    setEditText(message.content[0] || "");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingMessage) return;
+    const trimmed = editText.trim();
+    if (!trimmed) {
+      toast.error("Message cannot be empty");
+      return;
     }
 
+    try {
+      await editMessageMutation({
+        messageId: editingMessage._id,
+        content: trimmed,
+      });
+      toast.success("Message edited");
+      setEditingMessage(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to edit message");
+    }
+  };
+
+  if (!conversation) {
     return (
-        <div className="flex h-full min-h-0 flex-col">
-            <header className="flex items-center justify-between border-b p-3">
-                <div className="flex items-center gap-3 min-w-0">
-                    <Avatar 
-                        size="lg"
-                        className={cn(!conversation.isGroup && "cursor-pointer transition-transform hover:scale-105")}
-                        onClick={() => {
-                            if (!conversation.isGroup && otherMember) {
-                                setSelectedUserId(otherMember._id);
-                            }
-                        }}
-                    >
-                        <AvatarImage src={avatarUrl} alt={title} />
-                        <AvatarFallback>{conversation.isGroup ? <Users className="size-5" /> : <User className="size-5" />}</AvatarFallback>
-                        {!conversation.isGroup ? <AvatarBadge className="bg-emerald-500" /> : null}
-                    </Avatar>
+      <div className="flex h-full w-full items-center justify-center">
+        <div className="size-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
 
-                    <div className="min-w-0">
-                        <h2 className="truncate font-semibold">{title}</h2>
-                        {conversation.activeCall ? (
-                            <p className="text-xs text-emerald-500 font-semibold animate-pulse flex items-center gap-1">
-                                <span className="size-1.5 rounded-full bg-emerald-500" />
-                                {conversation.activeCall.type === "video" ? "Video Call Active" : "Audio Call Active"}{" "}
-                                ({conversation.activeCall.participants.length} in call)
-                            </p>
-                        ) : (
-                            <p className="text-xs text-muted-foreground">
-                                {conversation.isGroup ? `${conversation.members.length} members` : "Online"}
-                            </p>
-                        )}
-                    </div>
-                </div>
+  return (
+    <div className="flex h-full flex-col bg-background overflow-hidden relative">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b px-4 py-3 shrink-0 bg-background/95 backdrop-blur-xs z-10">
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Mobile Back Button */}
+          <Link
+            href="/conversations"
+            className="md:hidden p-1.5 -ml-1 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted"
+            aria-label="Back to conversations"
+          >
+            <ArrowLeft className="size-5" />
+          </Link>
 
-                <div className="flex items-center gap-2">
-                    {conversation.activeCall ? (
-                        !isUserInCurrentCall ? (
-                            <Button
-                                type="button"
-                                onClick={() => void joinCall(conversation._id)}
-                                disabled={isConnecting}
-                                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 h-8 rounded-lg flex items-center gap-1.5 animate-pulse"
-                            >
-                                {conversation.activeCall.type === "video" ? <Video className="size-3.5" /> : <Phone className="size-3.5" />}
-                                Join Call
-                            </Button>
-                        ) : null
-                    ) : (
-                        <>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        onClick={() => void startCall(conversation._id, "audio")}
-                                        disabled={isConnecting || !!activeCall}
-                                        variant="ghost"
-                                        size="icon"
-                                        className="size-9 rounded-lg text-muted-foreground hover:text-foreground"
-                                        aria-label="Start Audio Call"
-                                    >
-                                        <Phone className="size-5" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Audio Call</TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        onClick={() => void startCall(conversation._id, "video")}
-                                        disabled={isConnecting || !!activeCall}
-                                        variant="ghost"
-                                        size="icon"
-                                        className="size-9 rounded-lg text-muted-foreground hover:text-foreground"
-                                        aria-label="Start Video Call"
-                                    >
-                                        <Video className="size-5" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Video Call</TooltipContent>
-                            </Tooltip>
-                        </>
-                    )}
-
-                    {conversation.isGroup ? (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button type="button" size="icon" variant="ghost" className="size-9 rounded-lg" aria-label="Group options">
-                                    <MoreVertical className="size-5" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setViewMembersOpen(true)}>
-                                    View Members
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setLeaveGroupOpen(true)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                    Leave Group
-                                </DropdownMenuItem>
-                                {conversation.ownerId === conversation.currentUserId ? (
-                                    <DropdownMenuItem onClick={() => setDeleteGroupOpen(true)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                        Delete Group
-                                    </DropdownMenuItem>
-                                ) : null}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    ) : null}
-                </div>
-            </header>
-
-            {isUserInCurrentCall ? (
-                <div className="flex-1 min-h-0 p-3">
-                    <CallScreen
-                        token={activeCall.token}
-                        video={activeCall.type === "video"}
-                        onLeave={leaveCall}
-                    />
-                </div>
-            ) : (
-                <>
-                    <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-3">
-                        {messages.length === 0 ? (
-                            <div className="flex flex-1 flex-col items-center justify-center text-center text-sm text-muted-foreground">
-                                <p className="font-medium text-foreground">No messages yet.</p>
-                                <p>Say hello!</p>
-                            </div>
-                        ) : (
-                            messages.map((message, index) => {
-                                const previousMessage = messages[index - 1];
-                                const grouped = previousMessage?.senderId === message.senderId;
-                                const senderName = message.sender
-                                    ? (message.sender.displayName ?? message.sender.username)
-                                    : "Unknown";
-                                const senderAvatar = message.sender?.customImageUrl ?? message.sender?.imageUrl ?? "";
-
-                                return (
-                                    <div
-                                        key={message._id}
-                                        className={cn("flex gap-2", grouped ? "mt-1" : "mt-4", message.isCurrentUser && "justify-end")}
-                                    >
-                                        {!message.isCurrentUser ? (
-                                            grouped ? (
-                                                <div className="size-8 shrink-0" />
-                                            ) : (
-                                                <Avatar 
-                                                    className="cursor-pointer transition-transform hover:scale-105"
-                                                    onClick={() => setSelectedUserId(message.senderId)}
-                                                >
-                                                    <AvatarImage src={senderAvatar} alt={senderName} />
-                                                    <AvatarFallback><User className="size-4" /></AvatarFallback>
-                                                </Avatar>
-
-                                            )
-                                        ) : null}
-                                        <div className={cn("flex max-w-[75%] flex-col", message.isCurrentUser && "items-end")}>
-                                            {!message.isCurrentUser && !grouped ? (
-                                                <span className="mb-1 text-xs font-medium text-muted-foreground">{senderName}</span>
-                                            ) : null}
-                                            <div
-                                                className={cn(
-                                                    "rounded-lg text-sm",
-                                                    message.type === "text" && (message.isCurrentUser ? "bg-primary text-primary-foreground px-3 py-2" : "bg-muted text-foreground px-3 py-2"),
-                                                )}
-                                            >
-                                                {message.type === "image" ? (() => {
-                                                    try {
-                                                        const meta = JSON.parse(message.content[0]) as { fileUrl: string; fileName: string };
-                                                        return <ImageMessage fileUrl={meta.fileUrl} fileName={meta.fileName} />;
-                                                    } catch { return <p className="whitespace-pre-wrap break-words">{message.content[0]}</p>; }
-                                                })() : message.type === "video" ? (() => {
-                                                    try {
-                                                        const meta = JSON.parse(message.content[0]) as { fileUrl: string; fileName: string };
-                                                        return <VideoMessage fileUrl={meta.fileUrl} fileName={meta.fileName} />;
-                                                    } catch { return <p className="whitespace-pre-wrap break-words">{message.content[0]}</p>; }
-                                                })() : message.type === "file" ? (() => {
-                                                    try {
-                                                        const meta = JSON.parse(message.content[0]) as { fileUrl: string; fileName: string; fileSize: number; mimeType: string };
-                                                        return <FileMessage fileUrl={meta.fileUrl} fileName={meta.fileName} fileSize={meta.fileSize} mimeType={meta.mimeType} />;
-                                                    } catch { return <p className="whitespace-pre-wrap break-words">{message.content[0]}</p>; }
-                                                })() : (
-                                                    <p className="whitespace-pre-wrap break-words">{message.content[0]}</p>
-                                                )}
-                                            </div>
-                                            {(!grouped || message.isCurrentUser) ? (
-                                                <div className="flex items-center gap-1.5 mt-1">
-                                                    {!grouped ? (
-                                                        <span className="text-[11px] text-muted-foreground">{formatMessageTime(message._creationTime)}</span>
-                                                    ) : null}
-                                                    {message.isCurrentUser ? (
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <span className="cursor-help flex items-center">
-                                                                    {message.readBy && message.readBy.length > 0 ? (
-                                                                        <CheckCheck className="size-3.5 text-emerald-500" />
-                                                                    ) : (
-                                                                        <Check className="size-3.5 text-muted-foreground" />
-                                                                    )}
-                                                                </span>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent side="top">
-                                                                {message.readBy && message.readBy.length > 0 ? (
-                                                                    <span>
-                                                                        {conversation.isGroup
-                                                                            ? `Seen by: ${message.readBy.map((m) => m.username).join(", ")}`
-                                                                            : "Read"}
-                                                                    </span>
-                                                                ) : (
-                                                                    <span>Sent</span>
-                                                                )}
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    ) : null}
-                                                </div>
-                                            ) : null}
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                        <div ref={endRef} />
-                    </div>
-
-                    <form className="border-t p-3" onSubmit={(event) => void handleSubmit(event)}>
-                        <div className="flex items-end gap-2">
-                            <AttachmentPopover disabled={sending} conversationId={typedConversationId} />
-                            <EmojiPickerButton disabled={sending} onEmojiSelect={handleEmojiSelect} />
-                            <textarea
-                                ref={inputRef}
-                                value={body}
-                                onChange={(event) => setBody(event.target.value)}
-                                onKeyDown={handleKeyDown}
-                                disabled={sending}
-                                rows={1}
-                                placeholder="Type a message"
-                                className="min-h-9 max-h-28 flex-1 resize-none rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-                            />
-                            <Button type="submit" size="icon" disabled={sending || body.trim().length === 0} aria-label="Send message">
-                                <Send className="size-4" />
-                            </Button>
-                        </div>
-                        {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
-                    </form>
-                </>
+          {/* Avatar with Presence indicator */}
+          <div className="relative shrink-0">
+            <Avatar
+              className="size-10 cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => {
+                if (!conversation.isGroup && otherMember) {
+                  setSelectedUserId(otherMember._id);
+                }
+              }}
+            >
+              <AvatarImage src={avatarUrl} alt={title} />
+              <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                {conversation.isGroup ? (
+                  <Users className="size-5" />
+                ) : (
+                  title.substring(0, 2).toUpperCase()
+                )}
+              </AvatarFallback>
+            </Avatar>
+            {!conversation.isGroup && otherMember && (
+              <PresenceIndicator userId={otherMember._id} />
             )}
-            {conversation.isGroup && conversation.groupId ? (
-                <>
-                    <ViewMembersDialog open={viewMembersOpen} onOpenChange={setViewMembersOpen} groupId={conversation.groupId} />
-                    <LeaveGroupDialog open={leaveGroupOpen} onOpenChange={setLeaveGroupOpen} groupId={conversation.groupId} />
-                    <DeleteGroupDialog open={deleteGroupOpen} onOpenChange={setDeleteGroupOpen} groupId={conversation.groupId} />
-                </>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-sm font-semibold text-foreground">{title}</h2>
+            {conversation.isGroup ? (
+              <p className="text-xs text-muted-foreground">
+                {conversation.members.length} members
+              </p>
+            ) : otherMember ? (
+              <PresenceIndicator userId={otherMember._id} showText={true} />
             ) : null}
-            <UserProfileDialog
-                userId={selectedUserId}
-                open={!!selectedUserId}
-                onOpenChange={(open) => {
-                    if (!open) setSelectedUserId(undefined);
-                }}
-            />
+          </div>
         </div>
 
-    );
+        {/* Action Controls */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Audio Call */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => void startCall(conversationId, "audio")}
+            disabled={isConnecting || !!activeCall}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Start voice call"
+          >
+            <Phone className="size-4" />
+          </Button>
+
+          {/* Video Call */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => void startCall(conversationId, "video")}
+            disabled={isConnecting || !!activeCall}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Start video call"
+          >
+            <Video className="size-4" />
+          </Button>
+
+          {/* Group dropdown */}
+          {conversation.isGroup && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" variant="ghost" size="icon" aria-label="Group settings">
+                  <MoreVertical className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setViewMembersOpen(true)}>
+                  View Members
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLeaveGroupOpen(true)}>
+                  Leave Group
+                </DropdownMenuItem>
+                {conversation.ownerId === conversation.currentUserId && (
+                  <DropdownMenuItem
+                    onClick={() => setDeleteGroupOpen(true)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    Delete Group
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
+
+      {/* Active Call View */}
+      {isUserInCurrentCall && activeCall ? (
+        <CallScreen
+          token={activeCall.token}
+          video={activeCall.type === "video"}
+          onLeave={() => void leaveCall()}
+        />
+      ) : (
+        <>
+          {/* Active Call Banner if active elsewhere in group */}
+          {conversation.activeCall && !isUserInCurrentCall && (
+            <div className="flex items-center justify-between bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-2 text-xs text-emerald-600 dark:text-emerald-400">
+              <div className="flex items-center gap-2">
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>
+                  {conversation.activeCall.type === "video" ? "Video" : "Audio"} call in progress...
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs border-emerald-500/30 hover:bg-emerald-500/20"
+                onClick={() => void joinCall(conversationId)}
+              >
+                Join Call
+              </Button>
+            </div>
+          )}
+
+          {/* Paginated Message List */}
+          <MessageList
+            conversationId={typedConversationId}
+            isGroup={conversation.isGroup}
+            onReply={(msg) => {
+              setReplyingTo(msg);
+              inputRef.current?.focus();
+            }}
+            onEdit={handleStartEdit}
+            onSelectUser={(userId) => setSelectedUserId(userId)}
+          />
+
+          {/* Real-Time Typing Indicator */}
+          <TypingIndicator typingUsers={typingUsers} />
+
+          {/* Message Composer Area */}
+          <div className="border-t bg-background/95 backdrop-blur-xs p-3">
+            {/* Reply Preview Banner */}
+            {replyingTo && (
+              <div className="mb-2 flex items-center justify-between rounded-lg border border-border/60 bg-muted/40 px-3 py-1.5 text-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-1 h-6 rounded-full bg-primary" />
+                  <div className="min-w-0">
+                    <p className="font-semibold text-foreground/90 text-[11px]">
+                      Replying to {replyingTo.sender?.displayName || replyingTo.sender?.username || "user"}
+                    </p>
+                    <p className="truncate text-muted-foreground text-[11px]">
+                      {replyingTo.content[0] || (replyingTo.attachment ? replyingTo.attachment.name : "")}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-6 text-muted-foreground hover:text-foreground"
+                  onClick={() => setReplyingTo(null)}
+                  aria-label="Cancel reply"
+                >
+                  <X className="size-3.5" />
+                </Button>
+              </div>
+            )}
+
+            <form onSubmit={(e) => void handleSubmit(e)}>
+              <div className="flex items-end gap-2">
+                <AttachmentPopover disabled={sending} conversationId={typedConversationId} />
+                <EmojiPickerButton disabled={sending} onEmojiSelect={handleEmojiSelect} />
+
+                <textarea
+                  ref={inputRef}
+                  value={body}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  disabled={sending}
+                  rows={1}
+                  placeholder="Type a message..."
+                  className="min-h-9 max-h-32 flex-1 resize-none rounded-xl border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={sending || body.trim().length === 0}
+                  className="size-9 rounded-xl shadow-xs"
+                  aria-label="Send message"
+                >
+                  <Send className="size-4" />
+                </Button>
+              </div>
+              {error ? <p className="mt-1.5 text-xs text-destructive">{error}</p> : null}
+            </form>
+          </div>
+        </>
+      )}
+
+      {/* Edit Message Dialog */}
+      <Dialog open={!!editingMessage} onOpenChange={(open) => !open && setEditingMessage(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit2 className="size-4 text-primary" />
+              Edit Message
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              rows={3}
+              className="w-full resize-none rounded-lg border border-input bg-transparent p-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+              placeholder="Edit your message..."
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingMessage(null)}>
+              Cancel
+            </Button>
+            <Button onClick={() => void handleSaveEdit()}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Group Dialogs */}
+      {conversation.isGroup && conversation.groupId ? (
+        <>
+          <ViewMembersDialog
+            open={viewMembersOpen}
+            onOpenChange={setViewMembersOpen}
+            groupId={conversation.groupId}
+          />
+          <LeaveGroupDialog
+            open={leaveGroupOpen}
+            onOpenChange={setLeaveGroupOpen}
+            groupId={conversation.groupId}
+          />
+          <DeleteGroupDialog
+            open={deleteGroupOpen}
+            onOpenChange={setDeleteGroupOpen}
+            groupId={conversation.groupId}
+          />
+        </>
+      ) : null}
+
+      {/* User Profile Dialog */}
+      <UserProfileDialog
+        userId={selectedUserId}
+        open={!!selectedUserId}
+        onOpenChange={(open) => {
+          if (!open) setSelectedUserId(undefined);
+        }}
+      />
+    </div>
+  );
 };
 
 export default ActiveConversation;

@@ -17,7 +17,10 @@ import type * as hooks_useMutationState from "../hooks/useMutationState.js";
 import type * as hooks_useNavigation from "../hooks/useNavigation.js";
 import type * as hooks_useStoreUser from "../hooks/useStoreUser.js";
 import type * as http from "../http.js";
+import type * as messages from "../messages.js";
+import type * as presence from "../presence.js";
 import type * as requests from "../requests.js";
+import type * as typing from "../typing.js";
 import type * as user from "../user.js";
 
 import type {
@@ -36,7 +39,10 @@ declare const fullApi: ApiFromModules<{
   "hooks/useNavigation": typeof hooks_useNavigation;
   "hooks/useStoreUser": typeof hooks_useStoreUser;
   http: typeof http;
+  messages: typeof messages;
+  presence: typeof presence;
   requests: typeof requests;
+  typing: typeof typing;
   user: typeof user;
 }>;
 

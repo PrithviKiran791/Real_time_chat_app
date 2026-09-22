@@ -6,13 +6,10 @@ import type { Id } from "@/convex/_generated/dataModel";
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
     DialogTitle,
-    DialogDescription,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { User, Mail, Sparkles, MessageSquareQuote } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 type Props = {
     userId: Id<"users"> | undefined;
@@ -33,6 +30,7 @@ export const UserProfileDialog = ({ userId, open, onOpenChange }: Props) => {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[400px] gap-0 p-0 overflow-hidden">
+                <DialogTitle className="sr-only">{name}</DialogTitle>
                 {/* Header background gradient */}
                 <div className="relative h-20 bg-gradient-to-br from-primary/80 via-primary/50 to-primary/20">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />

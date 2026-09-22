@@ -5,25 +5,27 @@ import HowItWorks from "./HowItWorks";
 import WhyChooseUs from "./WhyChooseUs";
 import GlobalConnectivity from "./GlobalConnectivity";
 import Footer from "./Footer";
+import { AuroraBackground } from "@/components/ui/aurora-background";
 
 /**
  * Marketing landing page for signed-out visitors.
  * Sections are intentionally split into standalone components so new ones
- * (Pricing, FAQ, Blog, API Docs, Integrations, Customer Stories, etc.) can
- * be dropped in here without touching existing sections.
+ * can be dropped in here without touching existing sections.
  */
 const LandingPage = () => {
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-white">
-      <Navbar />
-      <main>
-        <Hero />
-        <Features />
-        <HowItWorks />
-        <WhyChooseUs />
-        <GlobalConnectivity />
-      </main>
-      <Footer />
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-[#020617] text-white">
+      <AuroraBackground className="min-h-screen w-full items-stretch justify-start bg-transparent">
+        <Navbar />
+        <main className="relative z-10">
+          <Hero />
+          <Features />
+          <HowItWorks />
+          <WhyChooseUs />
+          <GlobalConnectivity />
+        </main>
+        <Footer />
+      </AuroraBackground>
     </div>
   );
 };

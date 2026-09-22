@@ -8,11 +8,47 @@ import { Phone, PhoneOff, Video, Volume2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import type { Id } from "@/convex/_generated/dataModel";
+
+export type CallStatus = "idle" | "ringing" | "connecting" | "active" | "declined" | "ended" | "missed";
+
+export type ConversationMember = {
+    _id: string;
+    username: string;
+    imageUrl?: string;
+    customImageUrl?: string;
+    displayName?: string;
+};
+
+export type ConversationActiveCall = {
+    type: "audio" | "video";
+    startedAt: number;
+    startedBy: string;
+    participants: string[];
+    status: "ringing" | "connecting" | "active" | "declined" | "ended" | "missed";
+    declinedBy?: string[];
+};
+
+export type ConversationItem = {
+    _id: string;
+    isGroup?: boolean;
+    name?: string;
+    imageUrl?: string;
+    currentUserId: string;
+    members: ConversationMember[];
+    activeCall?: ConversationActiveCall;
+};
+
+export type IncomingCallPayload = {
+    conversation: ConversationItem;
+    activeCall: ConversationActiveCall;
+};
 
 export type ActiveCall = {
     conversationId: string;
     type: "audio" | "video";
     token: string;
+    status?: CallStatus;
 };
 
 type CallContextType = {
@@ -21,8 +57,8 @@ type CallContextType = {
     startCall: (conversationId: string, type: "audio" | "video") => Promise<void>;
     joinCall: (conversationId: string) => Promise<void>;
     leaveCall: () => Promise<void>;
-    declineCall: (conversationId: string) => void;
-    incomingCall: { conversation: any; activeCall: any } | null;
+    declineCall: (conversationId: string) => Promise<void>;
+    incomingCall: IncomingCallPayload | null;
 };
 
 const CallContext = createContext<CallContextType | undefined>(undefined);
@@ -30,12 +66,12 @@ const CallContext = createContext<CallContextType | undefined>(undefined);
 // Web Audio API Ringtone Generator
 class RingtonePlayer {
     private audioCtx: AudioContext | null = null;
-    private intervalId: any = null;
+    private intervalId: ReturnType<typeof setInterval> | null = null;
 
     start() {
         if (this.audioCtx) return;
 
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
         if (!AudioContextClass) return;
 
         try {
@@ -94,13 +130,22 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
     const pathname = usePathname();
     const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
     const [isConnecting, setIsConnecting] = useState(false);
-    const [declinedCallIds, setDeclinedCallIds] = useState<string[]>([]);
     const ringtonePlayerRef = useRef<RingtonePlayer | null>(null);
+    const timeoutTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    const conversations = useQuery(api.conversations.list);
+    const [now, setNow] = useState<number>(() => Date.now());
+
+    useEffect(() => {
+        const interval = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const conversations = useQuery(api.conversations.list) as ConversationItem[] | undefined;
     const startCallMutation = useMutation(api.conversations.startCall);
     const joinCallMutation = useMutation(api.conversations.joinCall);
     const leaveCallMutation = useMutation(api.conversations.leaveCall);
+    const declineCallMutation = useMutation(api.conversations.declineCall);
+    const timeoutCallMutation = useMutation(api.conversations.timeoutCall);
 
     // Initialize ringtone player on client
     useEffect(() => {
@@ -110,34 +155,69 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
         };
     }, []);
 
-    // Detect if we have an incoming call
-    const incomingCall = useMemo(() => {
+    // Detect if we have an incoming call for current user
+    // Derived directly — React Compiler handles optimization automatically
+    const findIncomingCall = (): IncomingCallPayload | null => {
         if (!conversations) return null;
-
         for (const conv of conversations) {
             if (conv.activeCall) {
                 const isParticipant = conv.activeCall.participants.includes(conv.currentUserId);
-                const isDeclined = declinedCallIds.includes(`${conv._id}-${conv.activeCall.startedAt}`);
-                const isRecent = Date.now() - conv.activeCall.startedAt < 120000; // 2 minutes timeout
-
-                // If user is a member of conversation but NOT currently in call, and has not declined
+                const isDeclined = (conv.activeCall.declinedBy ?? []).includes(conv.currentUserId);
+                const isRecent = now - conv.activeCall.startedAt < 45000;
                 if (!isParticipant && !isDeclined && isRecent) {
                     return { conversation: conv, activeCall: conv.activeCall };
                 }
             }
         }
         return null;
-    }, [conversations, declinedCallIds]);
+    };
+    const incomingCall = findIncomingCall();
 
-    // Handle Ringtone playback based on incoming call state
+    // Handle ringing sound for incoming calls
     useEffect(() => {
-        // If we are currently in an active call, don't ring for another incoming call
         if (incomingCall && !activeCall) {
             ringtonePlayerRef.current?.start();
         } else {
             ringtonePlayerRef.current?.stop();
         }
     }, [incomingCall, activeCall]);
+
+    // Monitor caller's call status (e.g. If receiver declines or call terminates on server)
+    useEffect(() => {
+        if (!activeCall || !conversations) return;
+
+        const currentConv = conversations.find((c) => c._id === activeCall.conversationId);
+        if (!currentConv || !currentConv.activeCall) {
+            // Call was ended or declined on server
+            if (activeCall.status === "ringing") {
+                toast.info("Call ended or declined");
+                const timer = setTimeout(() => {
+                    setActiveCall(null);
+                    if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
+                }, 0);
+                return () => clearTimeout(timer);
+            }
+        } else if (currentConv.activeCall.participants.length > 1 && activeCall.status === "ringing") {
+            // Second participant joined - call is now ACTIVE!
+            const timer2 = setTimeout(() => {
+                setActiveCall((prev) => (prev ? { ...prev, status: "active" } : null));
+                if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
+                toast.success("Call connected");
+            }, 0);
+            return () => clearTimeout(timer2);
+        }
+    }, [conversations, activeCall]);
+
+    // Handle browser unload when in active call
+    useEffect(() => {
+        const handleUnload = () => {
+            if (activeCall) {
+                void leaveCallMutation({ conversationId: activeCall.conversationId as Id<"conversations"> }).catch(() => {});
+            }
+        };
+        window.addEventListener("beforeunload", handleUnload);
+        return () => window.removeEventListener("beforeunload", handleUnload);
+    }, [activeCall, leaveCallMutation]);
 
     const fetchToken = async (conversationId: string): Promise<string> => {
         const res = await fetch(`/api/livekit?conversationId=${conversationId}`);
@@ -157,27 +237,37 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
 
         setIsConnecting(true);
         try {
-            // 1. Update call state in database
-            await startCallMutation({ conversationId: conversationId as any, type });
+            // 1. Update call state in database (status: "ringing")
+            await startCallMutation({ conversationId: conversationId as Id<"conversations">, type });
 
             // 2. Fetch LiveKit token
             const token = await fetchToken(conversationId);
 
-            // 3. Set local active call
+            // 3. Set local active call with ringing status
             setActiveCall({
                 conversationId,
                 type,
                 token,
+                status: "ringing",
             });
 
-            toast.success(`Starting ${type} call...`);
-        } catch (error: any) {
+            // 4. Set 45-second unanswered timeout
+            if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
+            timeoutTimerRef.current = setTimeout(async () => {
+                try {
+                    await timeoutCallMutation({ conversationId: conversationId as Id<"conversations"> });
+                } catch {}
+                setActiveCall(null);
+                toast.info("No answer. Call timed out.");
+            }, 45000);
+
+            toast.success(`Calling... (${type} call)`);
+        } catch (error) {
             console.error("Failed to start call:", error);
-            toast.error(error.message || "Failed to start call. Please try again.");
-            // Reset DB state if we failed
+            toast.error(error instanceof Error ? error.message : "Failed to start call. Please try again.");
             try {
-                await leaveCallMutation({ conversationId: conversationId as any });
-            } catch (e) {}
+                await leaveCallMutation({ conversationId: conversationId as Id<"conversations"> });
+            } catch {}
         } finally {
             setIsConnecting(false);
         }
@@ -192,16 +282,17 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
         setIsConnecting(true);
         try {
             // 1. Join call state in database
-            const dbCall = await joinCallMutation({ conversationId: conversationId as any });
+            const dbCall = await joinCallMutation({ conversationId: conversationId as Id<"conversations"> });
 
             // 2. Fetch LiveKit token
             const token = await fetchToken(conversationId);
 
-            // 3. Set local active call
+            // 3. Set local active call as ACTIVE
             setActiveCall({
                 conversationId,
                 type: dbCall.type as "audio" | "video",
                 token,
+                status: "active",
             });
 
             // 4. Redirect to conversation if not there
@@ -210,10 +301,10 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
                 router.push(targetPath);
             }
 
-            toast.success("Joining call...");
-        } catch (error: any) {
+            toast.success("Connected to call");
+        } catch (error) {
             console.error("Failed to join call:", error);
-            toast.error(error.message || "Failed to join call. Please try again.");
+            toast.error(error instanceof Error ? error.message : "Failed to join call. Please try again.");
         } finally {
             setIsConnecting(false);
         }
@@ -222,25 +313,30 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
     const leaveCall = async () => {
         if (!activeCall) return;
 
+        if (timeoutTimerRef.current) {
+            clearTimeout(timeoutTimerRef.current);
+            timeoutTimerRef.current = null;
+        }
+
         const { conversationId } = activeCall;
         setActiveCall(null);
         setIsConnecting(false);
 
         try {
-            await leaveCallMutation({ conversationId: conversationId as any });
-            toast.success("Left call");
+            await leaveCallMutation({ conversationId: conversationId as Id<"conversations"> });
+            toast.success("Call ended");
         } catch (error) {
             console.error("Failed to leave call on server:", error);
         }
     };
 
-    const declineCall = (conversationId: string) => {
-        if (!incomingCall) return;
-        
-        // Add to declined list so we don't prompt for this call again
-        const key = `${conversationId}-${incomingCall.activeCall.startedAt}`;
-        setDeclinedCallIds((prev) => [...prev, key]);
-        toast.info("Call declined");
+    const declineCall = async (conversationId: string) => {
+        try {
+            await declineCallMutation({ conversationId: conversationId as Id<"conversations"> });
+            toast.info("Call declined");
+        } catch (error) {
+            console.error("Failed to decline call on server:", error);
+        }
     };
 
     return (
@@ -260,7 +356,7 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
                 <IncomingCallDialog
                     incomingCall={incomingCall}
                     onAccept={() => void joinCall(incomingCall.conversation._id)}
-                    onDecline={() => declineCall(incomingCall.conversation._id)}
+                    onDecline={() => void declineCall(incomingCall.conversation._id)}
                 />
             )}
         </CallContext.Provider>
@@ -281,34 +377,33 @@ const IncomingCallDialog = ({
     onAccept,
     onDecline,
 }: {
-    incomingCall: { conversation: any; activeCall: any };
+    incomingCall: IncomingCallPayload;
     onAccept: () => void;
     onDecline: () => void;
 }) => {
     const { conversation, activeCall } = incomingCall;
 
     const initiator = useMemo(() => {
-        return conversation.members.find((m: any) => m._id === activeCall.startedBy);
+        return conversation.members.find((m) => m._id === activeCall.startedBy);
     }, [conversation, activeCall]);
 
     const title = conversation.isGroup
         ? conversation.name ?? "Group Call"
-        : initiator?.username ?? "Direct Call";
+        : initiator?.displayName || initiator?.username || "Direct Call";
 
     const subtitle = conversation.isGroup
-        ? `${initiator?.username ?? "Someone"} is inviting you to a group ${activeCall.type} call`
+        ? `${initiator?.displayName || initiator?.username || "Someone"} is inviting you to a group ${activeCall.type} call`
         : `Incoming ${activeCall.type} call...`;
 
     const avatarUrl = conversation.isGroup
         ? conversation.imageUrl ?? ""
-        : initiator?.imageUrl ?? "";
+        : initiator?.customImageUrl || initiator?.imageUrl || "";
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
             <div className="w-full max-w-md overflow-hidden rounded-2xl border border-border/80 bg-card p-6 shadow-2xl transition-all duration-300 hover:shadow-primary/5">
                 <div className="flex flex-col items-center text-center">
                     <div className="relative mb-4 flex items-center justify-center">
-                        {/* Pulsing ring around avatar */}
                         <div className="absolute inset-0 size-20 animate-ping rounded-full bg-primary/20 duration-1000" />
                         <Avatar className="size-20 border-2 border-primary shadow-lg">
                             <AvatarImage src={avatarUrl} alt={title} />
@@ -331,6 +426,7 @@ const IncomingCallDialog = ({
                             type="button"
                             variant="destructive"
                             onClick={onDecline}
+                            aria-label="Decline incoming call"
                             className="flex items-center gap-2 px-6 py-5 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                         >
                             <PhoneOff className="size-4" />
@@ -339,6 +435,7 @@ const IncomingCallDialog = ({
                         <Button
                             type="button"
                             onClick={onAccept}
+                            aria-label="Accept incoming call"
                             className="flex items-center gap-2 px-6 py-5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                         >
                             {activeCall.type === "video" ? <Video className="size-4" /> : <Phone className="size-4" />}

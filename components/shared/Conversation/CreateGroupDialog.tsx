@@ -81,11 +81,13 @@ export default function CreateGroupDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <DialogTrigger asChild>
-            <Button size="icon" variant="outline" aria-label="Create group">
-              <Users className="size-4" />
-            </Button>
-          </DialogTrigger>
+          <span className="inline-block">
+            <DialogTrigger asChild>
+              <Button size="icon" variant="outline" aria-label="Create group">
+                <Users className="size-4" />
+              </Button>
+            </DialogTrigger>
+          </span>
         </TooltipTrigger>
         <TooltipContent>
           <p>Create Group</p>

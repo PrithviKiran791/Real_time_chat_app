@@ -1,148 +1,92 @@
-/* Landing page decorative animations.
-   Kept as a CSS module so it stays scoped to the marketing page and never
-   leaks into the authenticated app's theme. */
+/* Landing page scoped animations — dark blue marketing theme */
 
-@keyframes floatCloud {
-  0% {
-    transform: translateX(-6%) translateY(0);
-  }
-  50% {
-    transform: translateX(4%) translateY(-2%);
-  }
-  100% {
-    transform: translateX(-6%) translateY(0);
-  }
-}
-
-@keyframes floatCloudReverse {
-  0% {
-    transform: translateX(5%) translateY(0);
-  }
-  50% {
-    transform: translateX(-5%) translateY(2%);
-  }
-  100% {
-    transform: translateX(5%) translateY(0);
-  }
-}
-
-@keyframes spinSlow {
+@keyframes fadeInUp {
   from {
-    transform: rotate(0deg);
+    opacity: 0;
+    transform: translateY(20px);
   }
   to {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes pulseGlow {
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes networkPulse {
   0%,
   100% {
-    opacity: 0.4;
+    opacity: 0.5;
     transform: scale(1);
   }
   50% {
     opacity: 1;
-    transform: scale(1.4);
+    transform: scale(1.15);
   }
 }
 
 @keyframes dashFlow {
   to {
-    stroke-dashoffset: -200;
+    stroke-dashoffset: -24;
   }
 }
 
-@keyframes gradientMove {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes floatParticle {
+@keyframes subtleGlow {
   0%,
   100% {
-    transform: translateY(0);
-    opacity: 0.6;
+    opacity: 0.4;
   }
   50% {
-    transform: translateY(-14px);
-    opacity: 1;
+    opacity: 0.7;
   }
-}
-
-.cloud {
-  animation: floatCloud 22s ease-in-out infinite;
-  will-change: transform;
-}
-
-.cloudReverse {
-  animation: floatCloudReverse 28s ease-in-out infinite;
-  will-change: transform;
-}
-
-.globeSpin {
-  animation: spinSlow 90s linear infinite;
-  transform-origin: 50% 50%;
-  will-change: transform;
-}
-
-.globeSpinSlow {
-  animation: spinSlow 140s linear infinite reverse;
-  transform-origin: 50% 50%;
-  will-change: transform;
-}
-
-.node {
-  animation: pulseGlow 3.2s ease-in-out infinite;
-  transform-origin: center;
-}
-
-.dashLine {
-  stroke-dasharray: 6 10;
-  animation: dashFlow 6s linear infinite;
-}
-
-.gradientText {
-  background-size: 200% 200%;
-  animation: gradientMove 8s ease infinite;
 }
 
 .fadeInUp {
-  animation: fadeInUp 0.7s ease both;
+  animation: fadeInUp 0.8s ease both;
 }
 
-.particle {
-  animation: floatParticle 5s ease-in-out infinite;
+.fadeIn {
+  animation: fadeIn 0.6s ease both;
+}
+
+.navbarEnter {
+  animation: fadeInUp 0.5s ease both;
+}
+
+.networkLine {
+  stroke-dasharray: 4 6;
+  animation: dashFlow 8s linear infinite;
+}
+
+.networkNode {
+  animation: networkPulse 3s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.heroGrid {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.08) 1px, transparent 0);
+  background-size: 32px 32px;
+}
+
+.heroGlow {
+  animation: subtleGlow 6s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cloud,
-  .cloudReverse,
-  .globeSpin,
-  .globeSpinSlow,
-  .node,
-  .dashLine,
-  .gradientText,
   .fadeInUp,
-  .particle {
+  .fadeIn,
+  .navbarEnter,
+  .networkLine,
+  .networkNode,
+  .heroGlow {
     animation: none !important;
   }
 }

@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useConversation } from "@/convex/hooks/useConversation";
 import { Badge } from "@/components/ui/badge";
+import { PresenceIndicator } from "./PresenceIndicator";
 
 type Conversation = NonNullable<typeof api.conversations.list._returnType>[number];
 
@@ -50,6 +51,16 @@ const getPreview = (conversation: Conversation) => {
             return `${senderPrefix}: 📄 File`;
         }
     }
+    if (lastMessage.type === "call") {
+        try {
+            const parsed = JSON.parse(lastMessage.content[0]) as { type: string; status: string };
+            if (parsed.status === "missed") return `📞 Missed ${parsed.type} call`;
+            if (parsed.status === "declined") return `📞 Call declined`;
+            return `📞 ${parsed.type === "video" ? "Video" : "Voice"} call`;
+        } catch {
+            return "📞 Call";
+        }
+    }
 
     const text = lastMessage.content[0] ?? "";
     return `${senderPrefix}: ${text}`;
@@ -61,12 +72,17 @@ const ConversationAvatar = ({ conversation }: { conversation: Conversation }) =>
     const imageUrl = conversation.isGroup ? conversation.imageUrl ?? "" : otherMember?.customImageUrl ?? otherMember?.imageUrl ?? "";
 
     return (
-        <Avatar>
-            <AvatarImage src={imageUrl} alt={name} />
-            <AvatarFallback>
-                {conversation.isGroup ? <Users className="size-4" /> : <User className="size-4" />}
-            </AvatarFallback>
-        </Avatar>
+        <div className="relative shrink-0">
+            <Avatar className="size-10">
+                <AvatarImage src={imageUrl} alt={name} />
+                <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                    {conversation.isGroup ? <Users className="size-4" /> : <User className="size-4" />}
+                </AvatarFallback>
+            </Avatar>
+            {!conversation.isGroup && otherMember && (
+                <PresenceIndicator userId={otherMember._id} />
+            )}
+        </div>
     );
 };
 
@@ -79,9 +95,9 @@ const ConversationList = () => {
             <div className="flex flex-col gap-2">
                 {Array.from({ length: 5 }).map((_, index) => (
                     <div key={index} className="flex items-center gap-3 rounded-lg border p-2">
-                        <div className="size-8 shrink-0 animate-pulse rounded-full bg-muted" />
+                        <div className="size-10 shrink-0 animate-pulse rounded-full bg-muted" />
                         <div className="flex min-w-0 flex-1 flex-col gap-2">
-                            <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+                            <div className="h-3.5 w-2/3 animate-pulse rounded bg-muted" />
                             <div className="h-3 w-full animate-pulse rounded bg-muted" />
                         </div>
                     </div>
@@ -94,7 +110,7 @@ const ConversationList = () => {
         return (
             <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center text-sm text-muted-foreground">
                 <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-                    <MessageCircle className="size-6" />
+                    <MessageCircle className="size-6 text-primary" />
                 </div>
                 <div>
                     <p className="font-medium text-foreground">No conversations yet.</p>
@@ -114,21 +130,21 @@ const ConversationList = () => {
                 key={conversation._id}
                 href={`/conversations/${conversation._id}`}
                 className={cn(
-                    "flex items-center gap-3 rounded-lg border p-2 transition-colors hover:bg-muted",
-                    active && "border-primary bg-primary/10",
+                    "flex items-center gap-3 rounded-xl border p-2.5 transition-all hover:bg-muted/70",
+                    active && "border-primary bg-primary/10 shadow-xs",
                 )}
             >
                 <ConversationAvatar conversation={conversation} />
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                        <h3 className="truncate text-sm font-medium">{name}</h3>
+                        <h3 className="truncate text-sm font-semibold">{name}</h3>
                         <span className="shrink-0 text-xs text-muted-foreground">{formatRelativeTime(timestamp)}</span>
                     </div>
-                    <div className="flex items-center justify-between gap-1 mt-0.5">
+                    <div className="flex items-center justify-between gap-1 mt-1">
                         {conversation.activeCall ? (
-                            <p className="truncate text-xs font-semibold text-emerald-500 animate-pulse flex-1 flex items-center gap-1">
+                            <p className="truncate text-xs font-medium text-emerald-500 animate-pulse flex-1 flex items-center gap-1.5">
                                 <span className="size-1.5 rounded-full bg-emerald-500" />
-                                {conversation.activeCall.type === "video" ? "🎥 Video Call Active..." : "📞 Audio Call Active..."}
+                                {conversation.activeCall.type === "video" ? "Video Call Active" : "Audio Call Active"}
                             </p>
                         ) : (
                             <p className="truncate text-xs text-muted-foreground flex-1">{getPreview(conversation)}</p>

@@ -1,0 +1,425 @@
+/* ==========================================================================
+   ChatSphere — Neomorphic Authentication Card Styles
+   ========================================================================== */
+
+/* Outer atmospheric environment — Solid deep navy background prevents any overlap bleed */
+.neomorphic-auth-backdrop {
+  background-color: #020617 !important;
+  opacity: 1 !important;
+}
+
+.neomorphic-auth-glow-1 {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  width: 540px;
+  height: 540px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.16) 0%, rgba(7, 26, 53, 0.06) 55%, transparent 70%);
+  border-radius: 9999px;
+  filter: blur(90px);
+  pointer-events: none;
+}
+
+.neomorphic-auth-glow-2 {
+  position: absolute;
+  bottom: 12%;
+  right: 18%;
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.08) 0%, transparent 70%);
+  border-radius: 9999px;
+  filter: blur(70px);
+  pointer-events: none;
+}
+
+.neomorphic-auth-grid {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Neomorphic elevated card container */
+.neomorphic-card {
+  background: #071A35 !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-top-color: rgba(255, 255, 255, 0.13) !important;
+  border-left-color: rgba(255, 255, 255, 0.11) !important;
+  border-radius: 28px !important;
+  box-shadow:
+    18px 18px 40px rgba(0, 0, 0, 0.48),
+    -10px -10px 30px rgba(37, 99, 235, 0.07),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Card entrance animation */
+@keyframes neomorphicCardEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.neomorphic-animate-enter {
+  animation: neomorphicCardEntrance 380ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Inset / recessed inputs (Target all Clerk inputs unconditionally) */
+.neomorphic-input,
+.cl-rootBox input,
+.cl-rootBox input[type="text"],
+.cl-rootBox input[type="email"],
+.cl-rootBox input[type="password"],
+.cl-rootBox input[type="tel"],
+.cl-rootBox input[type="number"],
+.cl-formFieldInput,
+.cl-input {
+  background-color: #0A2347 !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  border-radius: 14px !important;
+  padding: 12px 16px !important;
+  font-size: 15px !important;
+  box-shadow:
+    inset 4px 4px 10px rgba(0, 0, 0, 0.32),
+    inset -3px -3px 8px rgba(37, 99, 235, 0.04) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.neomorphic-input::placeholder,
+.cl-rootBox input::placeholder,
+.cl-formFieldInput::placeholder,
+.cl-input::placeholder {
+  color: #64748B !important;
+  opacity: 1 !important;
+}
+
+.neomorphic-input:focus,
+.neomorphic-input:focus-visible,
+.cl-rootBox input:focus,
+.cl-rootBox input:focus-visible,
+.cl-formFieldInput:focus,
+.cl-formFieldInput:focus-visible,
+.cl-input:focus {
+  outline: none !important;
+  border-color: rgba(37, 99, 235, 0.70) !important;
+  box-shadow:
+    inset 3px 3px 8px rgba(0, 0, 0, 0.35),
+    0 0 0 3px rgba(37, 99, 235, 0.25),
+    0 0 16px rgba(37, 99, 235, 0.18) !important;
+}
+
+/* All headings, titles, subtitles, and labels inside Clerk */
+.cl-rootBox .cl-headerTitle,
+.cl-rootBox h1,
+.cl-rootBox h2,
+.cl-rootBox [data-localization-key*="title"] {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.cl-rootBox .cl-headerSubtitle,
+.cl-rootBox p,
+.cl-rootBox [data-localization-key*="subtitle"] {
+  color: #94A3B8 !important;
+}
+
+.cl-rootBox .cl-formFieldLabel,
+.cl-rootBox label {
+  color: #CBD5E1 !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+}
+
+/* Primary Submit CTA Button */
+.neomorphic-button-primary,
+.cl-rootBox .cl-formButtonPrimary,
+.cl-formButtonPrimary {
+  background: #2563EB !important;
+  background-image: linear-gradient(180deg, #2D6CF6 0%, #1D58D8 100%) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 14px !important;
+  padding: 12px 20px !important;
+  box-shadow:
+    0 4px 16px rgba(37, 99, 235, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  cursor: pointer !important;
+}
+
+.neomorphic-button-primary:hover,
+.cl-rootBox .cl-formButtonPrimary:hover,
+.cl-formButtonPrimary:hover {
+  background: #1D4ED8 !important;
+  background-image: linear-gradient(180deg, #3B82F6 0%, #2563EB 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow:
+    0 6px 20px rgba(37, 99, 235, 0.45),
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
+}
+
+.neomorphic-button-primary:active,
+.cl-rootBox .cl-formButtonPrimary:active,
+.cl-formButtonPrimary:active {
+  transform: translateY(0) !important;
+  box-shadow:
+    inset 2px 2px 6px rgba(0, 0, 0, 0.35),
+    0 2px 8px rgba(37, 99, 235, 0.25) !important;
+}
+
+/* Secondary / Social OAuth Buttons */
+.neomorphic-button-social,
+.cl-rootBox .cl-socialButtonsBlockButton,
+.cl-socialButtonsBlockButton {
+  background-color: #0A2347 !important;
+  color: #FFFFFF !important;
+  font-weight: 500 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+  padding: 10px 16px !important;
+  min-height: 44px !important;
+  box-shadow:
+    4px 4px 12px rgba(0, 0, 0, 0.25),
+    -2px -2px 8px rgba(37, 99, 235, 0.04),
+    inset 0 1px 1px rgba(255, 255, 255, 0.06) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.neomorphic-button-social:hover,
+.cl-rootBox .cl-socialButtonsBlockButton:hover,
+.cl-socialButtonsBlockButton:hover {
+  background-color: #0F3161 !important;
+  border-color: rgba(96, 165, 250, 0.25) !important;
+  transform: translateY(-1px) !important;
+  box-shadow:
+    5px 5px 16px rgba(0, 0, 0, 0.30),
+    -3px -3px 10px rgba(37, 99, 235, 0.08),
+    inset 0 1px 1px rgba(255, 255, 255, 0.12) !important;
+}
+
+.neomorphic-button-social:active,
+.cl-rootBox .cl-socialButtonsBlockButton:active,
+.cl-socialButtonsBlockButton:active {
+  transform: translateY(0) !important;
+  box-shadow:
+    inset 2px 2px 6px rgba(0, 0, 0, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.cl-rootBox .cl-socialButtonsBlockButtonText {
+  color: #FFFFFF !important;
+}
+
+/* Subtle Divider */
+.cl-dividerRow {
+  margin: 18px 0 !important;
+}
+
+.cl-dividerLine {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  height: 1px !important;
+}
+
+.cl-dividerText {
+  color: #64748B !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  padding: 0 12px !important;
+}
+
+/* Links */
+.cl-footerActionLink,
+.cl-formFieldAction,
+.cl-identityPreviewEditButton {
+  color: #60A5FA !important;
+  font-weight: 500 !important;
+  transition: color 0.15s ease !important;
+  text-decoration: none !important;
+}
+
+.cl-footerActionLink:hover,
+.cl-formFieldAction:hover,
+.cl-identityPreviewEditButton:hover {
+  color: #93C5FD !important;
+  text-decoration: underline !important;
+}
+
+/* Error states */
+.cl-alert,
+.cl-alertDanger {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(239, 68, 68, 0.30) !important;
+  border-radius: 12px !important;
+  color: #FCA5A5 !important;
+  padding: 10px 14px !important;
+  font-size: 13.5px !important;
+}
+
+.cl-formFieldErrorText {
+  color: #F87171 !important;
+  font-size: 12px !important;
+  margin-top: 4px !important;
+}
+
+/* Identity preview in 2-step flows */
+.cl-identityPreview {
+  background-color: #0A2347 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+  padding: 10px 14px !important;
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.25) !important;
+}
+
+.cl-identityPreviewText {
+  color: #FFFFFF !important;
+  font-weight: 500 !important;
+}
+
+/* Clean up Clerk internal card chrome when wrapped inside our AuthCard */
+.neomorphic-clerk-wrapper,
+.neomorphic-clerk-wrapper .cl-rootBox,
+.neomorphic-clerk-wrapper .cl-cardBox,
+.neomorphic-clerk-wrapper .cl-card,
+.neomorphic-clerk-wrapper .cl-main,
+.neomorphic-clerk-wrapper .cl-form,
+.neomorphic-clerk-wrapper .cl-formField,
+.neomorphic-clerk-wrapper .cl-formFieldRow,
+.neomorphic-clerk-wrapper .cl-socialButtons,
+.neomorphic-clerk-wrapper .cl-socialButtonsRoot {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.neomorphic-clerk-wrapper .cl-card {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.neomorphic-clerk-wrapper .cl-cardBox {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.neomorphic-clerk-wrapper .cl-header {
+  width: 100% !important;
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding-bottom: 16px !important;
+}
+
+.neomorphic-clerk-wrapper .cl-headerTitle {
+  color: #FFFFFF !important;
+  font-family: var(--font-heading, var(--font-sans)), sans-serif !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  text-align: center !important;
+  width: 100% !important;
+}
+
+.neomorphic-clerk-wrapper .cl-headerSubtitle {
+  color: #94A3B8 !important;
+  font-size: 14px !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin-top: 4px !important;
+}
+
+.neomorphic-clerk-wrapper .cl-socialButtonsBlockButton {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  gap: 12px !important;
+}
+
+.neomorphic-clerk-wrapper .cl-dividerRow {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 18px 0 !important;
+}
+
+.neomorphic-clerk-wrapper .cl-footer {
+  width: 100% !important;
+  background: transparent !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding-top: 16px !important;
+  margin-top: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.neomorphic-clerk-wrapper .cl-footerAction {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  gap: 6px !important;
+}
+
+.neomorphic-clerk-wrapper .cl-footerPages {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding-top: 8px !important;
+}
+
+.neomorphic-clerk-wrapper .cl-footerActionText {
+  color: #94A3B8 !important;
+  font-size: 13.5px !important;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .neomorphic-animate-enter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .neomorphic-card,
+  .neomorphic-input,
+  .neomorphic-button-primary,
+  .neomorphic-button-social,
+  .cl-formButtonPrimary,
+  .cl-socialButtonsBlockButton {
+    transition: none !important;
+    transform: none !important;
+  }
+}

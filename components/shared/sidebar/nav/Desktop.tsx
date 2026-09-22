@@ -8,13 +8,14 @@ import { ModeToggle } from "@/components/ui/theme/theme-toggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { LogOut } from "lucide-react";
 import { useNavigation } from "@/convex/hooks/useNavigation";
+import { Badge } from "@/components/ui/badge";
 
 const DesktopNav = () => {
     const paths = useNavigation();
     const { signOut } = useClerk();
 
     return (
-        <Card className="hidden h-full w-20 shrink-0 flex-col items-center justify-between px-3 py-5 lg:flex">
+        <Card className="hidden h-full w-20 shrink-0 flex-col items-center justify-between px-3 py-5 lg:flex border-slate-200/80 bg-white/80 dark:border-white/10 dark:bg-[#071A35]/80 backdrop-blur-xl shadow-xl">
             <nav>
                 <ul className="flex flex-col items-center gap-3">
                     {paths.map((path) => (
@@ -33,6 +34,9 @@ const DesktopNav = () => {
                                 </TooltipTrigger>
                                 <TooltipContent side="right">{path.name}</TooltipContent>
                             </Tooltip>
+                            {path.count ? ( 
+                                <Badge className="absolute left-6 bottom-7 px-2">{path.count}</Badge>
+                            ): null}
                         </li>
                     ))}
                 </ul>

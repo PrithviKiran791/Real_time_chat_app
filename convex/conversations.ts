@@ -585,6 +585,8 @@ export const startCall = mutation({
       startedAt: Date.now(),
       startedBy: currentUser._id,
       participants: [currentUser._id],
+      status: "ringing",
+      declinedBy: [],
     };
 
     await ctx.db.patch(args.conversationId, {
@@ -612,18 +614,133 @@ export const joinCall = mutation({
       throw new ConvexError("No active call in this conversation");
     }
 
-    const participants = conversation.activeCall.participants;
+    const participants = [...conversation.activeCall.participants];
     if (!participants.includes(currentUser._id)) {
       participants.push(currentUser._id);
-      await ctx.db.patch(args.conversationId, {
-        activeCall: {
-          ...conversation.activeCall,
-          participants,
-        },
-      });
     }
 
-    return conversation.activeCall;
+    const updatedCall = {
+      ...conversation.activeCall,
+      participants,
+      status: "active",
+    };
+
+    await ctx.db.patch(args.conversationId, {
+      activeCall: updatedCall,
+    });
+
+    return updatedCall;
+  },
+});
+
+export const declineCall = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await getCurrentUser(ctx);
+    await requireConversationMember(ctx, args.conversationId, currentUser._id);
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || !conversation.activeCall) {
+      return null;
+    }
+
+    const declinedBy = conversation.activeCall.declinedBy ?? [];
+    if (!declinedBy.includes(currentUser._id)) {
+      declinedBy.push(currentUser._id);
+    }
+
+    // For direct conversations or if all other members declined, end call as declined
+    if (!conversation.isGroup) {
+      const activeCall = conversation.activeCall;
+
+      await ctx.db.insert("callHistory", {
+        conversationId: args.conversationId,
+        initiatorId: activeCall.startedBy,
+        type: activeCall.type,
+        startedAt: activeCall.startedAt,
+        endedAt: Date.now(),
+        duration: 0,
+        status: "declined",
+      });
+
+      // Insert message into conversation timeline
+      const msgId = await ctx.db.insert("messages", {
+        senderId: activeCall.startedBy,
+        conversationId: args.conversationId,
+        type: "call",
+        content: [JSON.stringify({ type: activeCall.type, status: "declined", duration: 0 })],
+        callInfo: {
+          type: activeCall.type,
+          status: "declined",
+          duration: 0,
+        },
+      });
+
+      await ctx.db.patch(args.conversationId, {
+        activeCall: undefined,
+        lastMessageId: msgId,
+      });
+
+      return { status: "declined" };
+    }
+
+    await ctx.db.patch(args.conversationId, {
+      activeCall: {
+        ...conversation.activeCall,
+        declinedBy,
+      },
+    });
+
+    return { status: "declined_by_user" };
+  },
+});
+
+export const timeoutCall = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || !conversation.activeCall) {
+      return null;
+    }
+
+    const activeCall = conversation.activeCall;
+    // Only timeout if still ringing and only 1 participant (the caller)
+    if (activeCall.status === "ringing" && activeCall.participants.length <= 1) {
+      await ctx.db.insert("callHistory", {
+        conversationId: args.conversationId,
+        initiatorId: activeCall.startedBy,
+        type: activeCall.type,
+        startedAt: activeCall.startedAt,
+        endedAt: Date.now(),
+        duration: 0,
+        status: "missed",
+      });
+
+      const msgId = await ctx.db.insert("messages", {
+        senderId: activeCall.startedBy,
+        conversationId: args.conversationId,
+        type: "call",
+        content: [JSON.stringify({ type: activeCall.type, status: "missed", duration: 0 })],
+        callInfo: {
+          type: activeCall.type,
+          status: "missed",
+          duration: 0,
+        },
+      });
+
+      await ctx.db.patch(args.conversationId, {
+        activeCall: undefined,
+        lastMessageId: msgId,
+      });
+
+      return { status: "missed" };
+    }
+
+    return null;
   },
 });
 
@@ -643,17 +760,32 @@ export const leaveCall = mutation({
     );
 
     if (participants.length === 0) {
+      const duration = Math.max(0, Math.floor((Date.now() - conversation.activeCall.startedAt) / 1000));
       await ctx.db.insert("callHistory", {
         conversationId: args.conversationId,
         initiatorId: conversation.activeCall.startedBy,
         type: conversation.activeCall.type,
         startedAt: conversation.activeCall.startedAt,
         endedAt: Date.now(),
-        duration: Math.max(0, Math.floor((Date.now() - conversation.activeCall.startedAt) / 1000)),
+        duration,
+        status: "completed",
+      });
+
+      const msgId = await ctx.db.insert("messages", {
+        senderId: conversation.activeCall.startedBy,
+        conversationId: args.conversationId,
+        type: "call",
+        content: [JSON.stringify({ type: conversation.activeCall.type, status: "completed", duration })],
+        callInfo: {
+          type: conversation.activeCall.type,
+          status: "completed",
+          duration,
+        },
       });
 
       await ctx.db.patch(args.conversationId, {
         activeCall: undefined,
+        lastMessageId: msgId,
       });
     } else {
       await ctx.db.patch(args.conversationId, {
@@ -694,20 +826,34 @@ export const endCall = mutation({
       throw new ConvexError("You are not authorized to end this call");
     }
 
+    const duration = Math.max(0, Math.floor((Date.now() - conversation.activeCall.startedAt) / 1000));
     await ctx.db.insert("callHistory", {
       conversationId: args.conversationId,
       initiatorId: conversation.activeCall.startedBy,
       type: conversation.activeCall.type,
       startedAt: conversation.activeCall.startedAt,
       endedAt: Date.now(),
-      duration: Math.max(0, Math.floor((Date.now() - conversation.activeCall.startedAt) / 1000)),
+      duration,
+      status: "completed",
+    });
+
+    const msgId = await ctx.db.insert("messages", {
+      senderId: conversation.activeCall.startedBy,
+      conversationId: args.conversationId,
+      type: "call",
+      content: [JSON.stringify({ type: conversation.activeCall.type, status: "completed", duration })],
+      callInfo: {
+        type: conversation.activeCall.type,
+        status: "completed",
+        duration,
+      },
     });
 
     await ctx.db.patch(args.conversationId, {
       activeCall: undefined,
+      lastMessageId: msgId,
     });
 
     return null;
   },
 });
-

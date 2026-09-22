@@ -1,151 +1,49 @@
-import styles from "./landing.module.css";
-import { cn } from "@/lib/utils";
+"use client";
 
-type GlobeProps = {
+import dynamic from "next/dynamic";
+import { memo } from "react";
+import { cn } from "@/lib/utils";
+import {
+  CHATSPHERE_CONNECTION_ARCS,
+  CHATSPHERE_GLOBE_CONFIG,
+} from "./globe-config";
+
+const World = dynamic(
+  () => import("@/components/ui/globe").then((m) => m.World),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="h-full w-full animate-pulse rounded-full bg-[#061A3A]/40"
+        aria-hidden="true"
+      />
+    ),
+  },
+);
+
+type HeroGlobeProps = {
   className?: string;
-  size?: number;
+  variant?: "hero" | "compact";
 };
 
 /**
- * A semi-transparent, slowly rotating "internet globe" built entirely from
- * SVG so it stays lightweight, crisp at any size, and needs no image assets.
- * Reused by the Hero and Global Connectivity sections.
+ * ChatSphere-specific wrapper around the Aceternity World globe.
+ * Keeps vendor globe code in components/ui and product config here.
  */
-const Globe = ({ className, size = 560 }: GlobeProps) => {
-  const nodes = [
-    { cx: 180, cy: 120 },
-    { cx: 340, cy: 90 },
-    { cx: 420, cy: 220 },
-    { cx: 120, cy: 260 },
-    { cx: 300, cy: 340 },
-    { cx: 440, cy: 380 },
-    { cx: 200, cy: 400 },
-  ];
+const HeroGlobe = ({ className, variant = "hero" }: HeroGlobeProps) => {
+  const config =
+    variant === "compact"
+      ? { ...CHATSPHERE_GLOBE_CONFIG, autoRotateSpeed: 0.35, pointSize: 3 }
+      : CHATSPHERE_GLOBE_CONFIG;
 
   return (
     <div
-      className={cn("pointer-events-none select-none", className)}
+      className={cn("relative h-full w-full overflow-hidden", className)}
       aria-hidden="true"
     >
-      <svg
-        viewBox="0 0 560 560"
-        width={size}
-        height={size}
-        className="h-full w-full"
-      >
-        <defs>
-          <radialGradient id="globeFill" cx="50%" cy="45%" r="60%">
-            <stop offset="0%" stopColor="#93C5FD" stopOpacity="0.10" />
-            <stop offset="70%" stopColor="#1E3A8A" stopOpacity="0.05" />
-            <stop offset="100%" stopColor="#1E3A8A" stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id="lineFade" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#1E3A8A" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#93C5FD" stopOpacity="0.15" />
-          </linearGradient>
-        </defs>
-
-        {/* outer glow */}
-        <circle cx="280" cy="280" r="260" fill="url(#globeFill)" />
-
-        {/* static outer ring */}
-        <circle
-          cx="280"
-          cy="280"
-          r="220"
-          fill="none"
-          stroke="#1E3A8A"
-          strokeOpacity="0.25"
-          strokeWidth="1.5"
-        />
-
-        {/* rotating longitude/latitude lines */}
-        <g className={styles.globeSpin}>
-          <ellipse
-            cx="280"
-            cy="280"
-            rx="220"
-            ry="90"
-            fill="none"
-            stroke="#1E3A8A"
-            strokeOpacity="0.3"
-            strokeWidth="1"
-          />
-          <ellipse
-            cx="280"
-            cy="280"
-            rx="220"
-            ry="150"
-            fill="none"
-            stroke="#1E3A8A"
-            strokeOpacity="0.22"
-            strokeWidth="1"
-          />
-          <ellipse
-            cx="280"
-            cy="280"
-            rx="90"
-            ry="220"
-            fill="none"
-            stroke="#93C5FD"
-            strokeOpacity="0.25"
-            strokeWidth="1"
-          />
-          <ellipse
-            cx="280"
-            cy="280"
-            rx="150"
-            ry="220"
-            fill="none"
-            stroke="#93C5FD"
-            strokeOpacity="0.18"
-            strokeWidth="1"
-          />
-        </g>
-
-        {/* counter-rotating connection lines between nodes */}
-        <g className={styles.globeSpinSlow}>
-          {nodes.map((from, i) =>
-            nodes.slice(i + 1).map((to, j) => (
-              <line
-                key={`${i}-${j}`}
-                x1={from.cx}
-                y1={from.cy}
-                x2={to.cx}
-                y2={to.cy}
-                stroke="url(#lineFade)"
-                strokeWidth="1"
-                className={styles.dashLine}
-              />
-            )),
-          )}
-          {nodes.map((n, i) => (
-            <g key={i}>
-              <circle cx={n.cx} cy={n.cy} r="4" fill="#1E3A8A" />
-              <circle
-                cx={n.cx}
-                cy={n.cy}
-                r="4"
-                fill="#93C5FD"
-                className={styles.node}
-              />
-            </g>
-          ))}
-        </g>
-
-        {/* central sphere outline */}
-        <circle
-          cx="280"
-          cy="280"
-          r="150"
-          fill="none"
-          stroke="#0F172A"
-          strokeOpacity="0.08"
-          strokeWidth="1"
-        />
-      </svg>
+      <World data={CHATSPHERE_CONNECTION_ARCS} globeConfig={config} />
     </div>
   );
 };
 
-export default Globe;
+export default memo(HeroGlobe);

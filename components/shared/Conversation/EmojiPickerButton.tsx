@@ -38,18 +38,20 @@ const EmojiPickerButton = ({ disabled, onEmojiSelect }: EmojiPickerButtonProps) 
         <Popover open={open} onOpenChange={setOpen}>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <PopoverTrigger asChild>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            disabled={disabled}
-                            aria-label="Pick an emoji"
-                            className="shrink-0 text-muted-foreground hover:text-foreground"
-                        >
-                            <Smile className="size-4" />
-                        </Button>
-                    </PopoverTrigger>
+                    <span className="inline-block shrink-0">
+                        <PopoverTrigger asChild>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                disabled={disabled}
+                                aria-label="Pick an emoji"
+                                className="shrink-0 text-muted-foreground hover:text-foreground"
+                            >
+                                <Smile className="size-4" />
+                            </Button>
+                        </PopoverTrigger>
+                    </span>
                 </TooltipTrigger>
                 <TooltipContent side="top">Emoji</TooltipContent>
             </Tooltip>
