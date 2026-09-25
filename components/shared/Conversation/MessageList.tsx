@@ -91,7 +91,7 @@ export const MessageList = React.memo<MessageListProps>(({
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto px-1 py-4 flex flex-col space-y-1 overscroll-contain touch-pan-y will-change-scroll"
+      className="flex min-h-0 flex-1 flex-col space-y-1 overflow-y-auto overscroll-contain touch-pan-y will-change-scroll px-1 py-4"
     >
       {/* Top status indicator: Loading older messages or Start of Conversation */}
       <div className="py-3 flex justify-center text-xs text-muted-foreground">

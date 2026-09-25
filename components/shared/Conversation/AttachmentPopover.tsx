@@ -173,7 +173,7 @@ const AttachmentPopover = ({ disabled, conversationId }: AttachmentPopoverProps)
                                     variant="ghost"
                                     disabled={isDisabled}
                                     aria-label="Add attachment"
-                                    className="shrink-0 text-muted-foreground hover:text-foreground"
+                                    className="size-11 shrink-0 text-muted-foreground hover:text-foreground sm:size-8"
                                 >
                                     {uploading ? (
                                         <Loader2 className="size-4 animate-spin" />

@@ -45,8 +45,10 @@ import { PresenceIndicator } from "./PresenceIndicator";
 import { useTyping } from "@/hooks/useTyping";
 import type { EnrichedMessage } from "./MessageItem";
 import { toast } from "sonner";
+import { useVisualViewportInset } from "@/hooks/useVisualViewportInset";
 
 const ActiveConversation = () => {
+  useVisualViewportInset();
   const { conversationId } = useConversation();
   const typedConversationId = conversationId as Id<"conversations">;
 
@@ -100,9 +102,15 @@ const ActiveConversation = () => {
     ? conversation.imageUrl ?? ""
     : (otherMember?.customImageUrl ?? otherMember?.imageUrl ?? "");
 
+  const resizeComposer = (element: HTMLTextAreaElement) => {
+    element.style.height = "auto";
+    element.style.height = `${Math.min(element.scrollHeight, 128)}px`;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setBody(e.target.value);
     handleTyping();
+    resizeComposer(e.target);
   };
 
   const handleEmojiSelect = (emoji: string) => {
@@ -141,6 +149,9 @@ const ActiveConversation = () => {
 
       setBody("");
       setReplyingTo(null);
+      if (inputRef.current) {
+        inputRef.current.style.height = "auto";
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send message.");
     } finally {
@@ -192,14 +203,17 @@ const ActiveConversation = () => {
   }
 
   return (
-    <div className="flex h-full flex-col bg-background overflow-hidden relative">
+    <div
+      className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background"
+      style={{ paddingBottom: "var(--keyboard-inset, 0px)" }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between border-b px-4 py-3 shrink-0 bg-background/95 backdrop-blur-xs z-10">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="z-10 flex shrink-0 items-center justify-between border-b bg-background/95 px-2 py-2 backdrop-blur-xs sm:px-4 sm:py-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           {/* Mobile Back Button */}
           <Link
             href="/conversations"
-            className="md:hidden p-1.5 -ml-1 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
             aria-label="Back to conversations"
           >
             <ArrowLeft className="size-5" />
@@ -242,18 +256,18 @@ const ActiveConversation = () => {
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
           {/* Audio Call */}
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={() => void startCall(conversationId, "audio")}
-            disabled={isConnecting || !!activeCall}
-            className="text-muted-foreground hover:text-foreground"
+            disabled={isConnecting || !!activeCall || !conversationId}
+            className="size-11 text-muted-foreground hover:text-foreground sm:size-9"
             aria-label="Start voice call"
           >
-            <Phone className="size-4" />
+            <Phone className="size-5 sm:size-4" />
           </Button>
 
           {/* Video Call */}
@@ -262,19 +276,19 @@ const ActiveConversation = () => {
             variant="ghost"
             size="icon"
             onClick={() => void startCall(conversationId, "video")}
-            disabled={isConnecting || !!activeCall}
-            className="text-muted-foreground hover:text-foreground"
+            disabled={isConnecting || !!activeCall || !conversationId}
+            className="size-11 text-muted-foreground hover:text-foreground sm:size-9"
             aria-label="Start video call"
           >
-            <Video className="size-4" />
+            <Video className="size-5 sm:size-4" />
           </Button>
 
           {/* Group dropdown */}
           {conversation.isGroup && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="icon" aria-label="Group settings">
-                  <MoreVertical className="size-4" />
+                <Button type="button" variant="ghost" size="icon" className="size-11 sm:size-9" aria-label="Group settings">
+                  <MoreVertical className="size-5 sm:size-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -300,11 +314,13 @@ const ActiveConversation = () => {
 
       {/* Active Call View */}
       {isUserInCurrentCall && activeCall ? (
-        <CallScreen
-          token={activeCall.token}
-          video={activeCall.type === "video"}
-          onLeave={() => void leaveCall()}
-        />
+        <div className="flex min-h-0 flex-1 flex-col">
+          <CallScreen
+            token={activeCall.token}
+            video={activeCall.type === "video"}
+            onLeave={leaveCall}
+          />
+        </div>
       ) : (
         <>
           {/* Active Call Banner if active elsewhere in group */}
@@ -327,20 +343,21 @@ const ActiveConversation = () => {
             </div>
           )}
 
-          {/* Paginated Message List */}
-          <MessageList
-            conversationId={typedConversationId}
-            isGroup={conversation.isGroup}
-            onReply={handleReply}
-            onEdit={handleStartEdit}
-            onSelectUser={handleSelectUser}
-          />
-
-          {/* Real-Time Typing Indicator */}
-          <TypingIndicator typingUsers={typingUsers} />
+          <div className="flex min-h-0 flex-1 flex-col">
+            <MessageList
+              conversationId={typedConversationId}
+              isGroup={conversation.isGroup}
+              onReply={handleReply}
+              onEdit={handleStartEdit}
+              onSelectUser={handleSelectUser}
+            />
+            <div className="shrink-0">
+              <TypingIndicator typingUsers={typingUsers} />
+            </div>
+          </div>
 
           {/* Message Composer Area */}
-          <div className="border-t bg-background/95 backdrop-blur-xs p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="shrink-0 border-t bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xs">
             {/* Reply Preview Banner */}
             {replyingTo && (
               <div className="mb-2 flex items-center justify-between rounded-lg border border-border/60 bg-muted/40 px-3 py-1.5 text-xs">
@@ -381,14 +398,14 @@ const ActiveConversation = () => {
                   disabled={sending}
                   rows={1}
                   placeholder="Type a message..."
-                  className="min-h-9 max-h-32 flex-1 resize-none rounded-xl border border-input bg-transparent px-3 py-2 text-base sm:text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="min-h-11 max-h-32 min-w-0 flex-1 resize-none rounded-xl border border-input bg-transparent px-3 py-2.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9 sm:text-sm"
                 />
 
                 <Button
                   type="submit"
                   size="icon"
                   disabled={sending || body.trim().length === 0}
-                  className="size-9 rounded-xl shadow-xs"
+                  className="size-11 shrink-0 rounded-xl shadow-xs sm:size-9"
                   aria-label="Send message"
                 >
                   <Send className="size-4" />

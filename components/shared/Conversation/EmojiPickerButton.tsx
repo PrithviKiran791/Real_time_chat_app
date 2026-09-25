@@ -46,7 +46,7 @@ const EmojiPickerButton = ({ disabled, onEmojiSelect }: EmojiPickerButtonProps) 
                                 variant="ghost"
                                 disabled={disabled}
                                 aria-label="Pick an emoji"
-                                className="shrink-0 text-muted-foreground hover:text-foreground"
+                                className="size-11 shrink-0 text-muted-foreground hover:text-foreground sm:size-8"
                             >
                                 <Smile className="size-4" />
                             </Button>
@@ -74,8 +74,8 @@ const EmojiPickerButton = ({ disabled, onEmojiSelect }: EmojiPickerButtonProps) 
                         theme={theme}
                         lazyLoadEmojis
                         searchPlaceholder="Search emojis…"
-                        height={350}
-                        width={300}
+                        height={320}
+                        width={280}
                     />
                 </Suspense>
             </PopoverContent>

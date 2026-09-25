@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState, useRef } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/convex/_generated/api";
@@ -62,6 +62,59 @@ type CallContextType = {
 };
 
 const CallContext = createContext<CallContextType | undefined>(undefined);
+
+type LiveKitErrorPayload = {
+    error?: string;
+    code?: string;
+};
+
+function isValidConversationId(conversationId: string): boolean {
+    return Boolean(conversationId) && conversationId !== "undefined" && conversationId !== "null";
+}
+
+function mapLiveKitHttpError(status: number, payload: LiveKitErrorPayload | string): string {
+    if (typeof payload !== "string" && payload.error) {
+        return payload.error;
+    }
+
+    if (status === 401) return "You need to sign in to start a call.";
+    if (status === 403) return "You are not a member of this conversation.";
+    if (status === 400) return "A valid conversation is required to start a call.";
+    if (status === 503) return "Calling is temporarily unavailable. Please try again later.";
+    return "Calling is temporarily unavailable. Please try again later.";
+}
+
+export function mapMediaPermissionError(error: unknown, kind: "camera" | "microphone"): string | null {
+    const name = error instanceof Error ? error.name : "";
+    const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+
+    const denied =
+        name === "NotAllowedError" ||
+        name === "PermissionDeniedError" ||
+        message.includes("permission") ||
+        message.includes("denied") ||
+        message.includes("notallowed");
+
+    if (!denied) return null;
+
+    if (kind === "camera" || message.includes("video") || message.includes("camera")) {
+        return "Camera access was blocked. Please allow camera access and try again.";
+    }
+
+    return "Microphone access was blocked. Please allow microphone access and try again.";
+}
+
+export function mapLiveKitConnectionError(error: unknown, isVideo: boolean): string {
+    const permission = mapMediaPermissionError(error, isVideo ? "camera" : "microphone");
+    if (permission) return permission;
+
+    const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+    if (message.includes("network") || message.includes("websocket") || message.includes("connect")) {
+        return "Unable to connect to the call. Check your internet connection and try again.";
+    }
+
+    return "Unable to connect to the call. Check your internet connection and try again.";
+}
 
 // Web Audio API Ringtone Generator
 class RingtonePlayer {
@@ -133,9 +186,10 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
     const ringtonePlayerRef = useRef<RingtonePlayer | null>(null);
     const timeoutTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    const [now, setNow] = useState<number>(() => Date.now());
+    const [now, setNow] = useState(0);
 
     useEffect(() => {
+        setNow(Date.now());
         const interval = setInterval(() => setNow(Date.now()), 1000);
         return () => clearInterval(interval);
     }, []);
@@ -158,7 +212,7 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
     // Detect if we have an incoming call for current user
     // Derived directly — React Compiler handles optimization automatically
     const findIncomingCall = (): IncomingCallPayload | null => {
-        if (!conversations) return null;
+        if (!conversations || now === 0) return null;
         for (const conv of conversations) {
             if (conv.activeCall) {
                 const isParticipant = conv.activeCall.participants.includes(conv.currentUserId);
@@ -219,17 +273,43 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
         return () => window.removeEventListener("beforeunload", handleUnload);
     }, [activeCall, leaveCallMutation]);
 
-    const fetchToken = async (conversationId: string): Promise<string> => {
-        const res = await fetch(`/api/livekit?conversationId=${conversationId}`);
-        if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText || "Failed to generate LiveKit token");
+    const fetchToken = useCallback(async (conversationId: string): Promise<string> => {
+        if (!isValidConversationId(conversationId)) {
+            throw new Error("A valid conversation is required to start a call.");
         }
-        const data = await res.json();
-        return data.token;
-    };
 
-    const startCall = async (conversationId: string, type: "audio" | "video") => {
+        let res: Response;
+        try {
+            res = await fetch(`/api/livekit?conversationId=${encodeURIComponent(conversationId)}`);
+        } catch {
+            throw new Error("Unable to connect to the call. Check your internet connection and try again.");
+        }
+
+        const raw = await res.text();
+        let parsed: LiveKitErrorPayload & { token?: string } = {};
+        try {
+            parsed = raw ? (JSON.parse(raw) as LiveKitErrorPayload & { token?: string }) : {};
+        } catch {
+            parsed = { error: raw };
+        }
+
+        if (!res.ok) {
+            throw new Error(mapLiveKitHttpError(res.status, parsed));
+        }
+
+        if (!parsed.token) {
+            throw new Error("Calling is temporarily unavailable. Please try again later.");
+        }
+
+        return parsed.token;
+    }, []);
+
+    const startCall = useCallback(async (conversationId: string, type: "audio" | "video") => {
+        if (!isValidConversationId(conversationId)) {
+            toast.error("A valid conversation is required to start a call.");
+            return;
+        }
+
         if (activeCall) {
             toast.error("You are already in an active call.");
             return;
@@ -237,13 +317,9 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
 
         setIsConnecting(true);
         try {
-            // 1. Update call state in database (status: "ringing")
             await startCallMutation({ conversationId: conversationId as Id<"conversations">, type });
-
-            // 2. Fetch LiveKit token
             const token = await fetchToken(conversationId);
 
-            // 3. Set local active call with ringing status
             setActiveCall({
                 conversationId,
                 type,
@@ -251,29 +327,41 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
                 status: "ringing",
             });
 
-            // 4. Set 45-second unanswered timeout
             if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
-            timeoutTimerRef.current = setTimeout(async () => {
-                try {
-                    await timeoutCallMutation({ conversationId: conversationId as Id<"conversations"> });
-                } catch {}
-                setActiveCall(null);
-                toast.info("No answer. Call timed out.");
+            timeoutTimerRef.current = setTimeout(() => {
+                void (async () => {
+                    try {
+                        await timeoutCallMutation({ conversationId: conversationId as Id<"conversations"> });
+                    } catch (error) {
+                        console.error("[Call] timeout update failed", error);
+                    }
+                    setActiveCall(null);
+                    setIsConnecting(false);
+                    toast.info("No answer. Call timed out.");
+                })();
             }, 45000);
 
             toast.success(`Calling... (${type} call)`);
         } catch (error) {
-            console.error("Failed to start call:", error);
-            toast.error(error instanceof Error ? error.message : "Failed to start call. Please try again.");
+            console.error("[Call] start failed", error);
+            setActiveCall(null);
+            toast.error(error instanceof Error ? error.message : "Calling is temporarily unavailable. Please try again later.");
             try {
                 await leaveCallMutation({ conversationId: conversationId as Id<"conversations"> });
-            } catch {}
+            } catch (cleanupError) {
+                console.error("[Call] failed to clear ringing state after start error", cleanupError);
+            }
         } finally {
             setIsConnecting(false);
         }
-    };
+    }, [activeCall, fetchToken, leaveCallMutation, startCallMutation, timeoutCallMutation]);
 
-    const joinCall = async (conversationId: string) => {
+    const joinCall = useCallback(async (conversationId: string) => {
+        if (!isValidConversationId(conversationId)) {
+            toast.error("A valid conversation is required to start a call.");
+            return;
+        }
+
         if (activeCall) {
             toast.error("You are already in an active call.");
             return;
@@ -281,13 +369,9 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
 
         setIsConnecting(true);
         try {
-            // 1. Join call state in database
             const dbCall = await joinCallMutation({ conversationId: conversationId as Id<"conversations"> });
-
-            // 2. Fetch LiveKit token
             const token = await fetchToken(conversationId);
 
-            // 3. Set local active call as ACTIVE
             setActiveCall({
                 conversationId,
                 type: dbCall.type as "audio" | "video",
@@ -295,7 +379,6 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
                 status: "active",
             });
 
-            // 4. Redirect to conversation if not there
             const targetPath = `/conversations/${conversationId}`;
             if (pathname !== targetPath) {
                 router.push(targetPath);
@@ -303,14 +386,15 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
 
             toast.success("Connected to call");
         } catch (error) {
-            console.error("Failed to join call:", error);
-            toast.error(error instanceof Error ? error.message : "Failed to join call. Please try again.");
+            console.error("[Call] join failed", error);
+            setActiveCall(null);
+            toast.error(error instanceof Error ? error.message : "Calling is temporarily unavailable. Please try again later.");
         } finally {
             setIsConnecting(false);
         }
-    };
+    }, [activeCall, fetchToken, joinCallMutation, pathname, router]);
 
-    const leaveCall = async () => {
+    const leaveCall = useCallback(async () => {
         if (!activeCall) return;
 
         if (timeoutTimerRef.current) {
@@ -326,18 +410,21 @@ export const CallProvider = ({ children }: { children: React.ReactNode }) => {
             await leaveCallMutation({ conversationId: conversationId as Id<"conversations"> });
             toast.success("Call ended");
         } catch (error) {
-            console.error("Failed to leave call on server:", error);
+            console.error("[Call] leave failed", error);
+            toast.error("Call ended locally, but the server could not be updated. You can retry from the conversation.");
         }
-    };
+    }, [activeCall, leaveCallMutation]);
 
-    const declineCall = async (conversationId: string) => {
+    const declineCall = useCallback(async (conversationId: string) => {
+        if (!isValidConversationId(conversationId)) return;
         try {
             await declineCallMutation({ conversationId: conversationId as Id<"conversations"> });
             toast.info("Call declined");
         } catch (error) {
-            console.error("Failed to decline call on server:", error);
+            console.error("[Call] decline failed", error);
+            toast.error("Could not decline the call. Please try again.");
         }
-    };
+    }, [declineCallMutation]);
 
     return (
         <CallContext.Provider

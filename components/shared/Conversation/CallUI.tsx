@@ -23,6 +23,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { mapMediaPermissionError } from "@/components/shared/CallProvider";
 
 interface CallUIProps {
     isVideo: boolean;
@@ -86,15 +88,29 @@ const CallUI: React.FC<CallUIProps> = ({ isVideo, onLeave }) => {
     const toggleMic = async () => {
         if (!localParticipant) return;
         const newEnabled = !localParticipant.isMicrophoneEnabled;
-        await localParticipant.setMicrophoneEnabled(newEnabled);
-        setIsMuted(!newEnabled);
+        try {
+            await localParticipant.setMicrophoneEnabled(newEnabled);
+            setIsMuted(!newEnabled);
+        } catch (error) {
+            toast.error(
+                mapMediaPermissionError(error, "microphone") ??
+                    "Microphone access was blocked. Please allow microphone access and try again."
+            );
+        }
     };
 
     const toggleCam = async () => {
         if (!localParticipant) return;
         const newEnabled = !localParticipant.isCameraEnabled;
-        await localParticipant.setCameraEnabled(newEnabled);
-        setIsCamOff(!newEnabled);
+        try {
+            await localParticipant.setCameraEnabled(newEnabled);
+            setIsCamOff(!newEnabled);
+        } catch (error) {
+            toast.error(
+                mapMediaPermissionError(error, "camera") ??
+                    "Camera access was blocked. Please allow camera access and try again."
+            );
+        }
     };
 
     const toggleFullscreen = () => {
@@ -160,7 +176,7 @@ const CallUI: React.FC<CallUIProps> = ({ isVideo, onLeave }) => {
     return (
         <div className="flex flex-1 flex-col justify-between h-full bg-zinc-950 text-white relative">
             {/* Header Status Bar */}
-            <div className="absolute top-0 inset-x-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
+            <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent p-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:p-4">
                 <div className="flex items-center gap-2.5">
                     <span className={cn(
                         "size-2.5 rounded-full animate-pulse",
@@ -323,8 +339,8 @@ const CallUI: React.FC<CallUIProps> = ({ isVideo, onLeave }) => {
             </div>
 
             {/* Bottom Controls Bar */}
-            <div className="p-6 bg-gradient-to-t from-black/90 to-transparent flex flex-col items-center gap-4">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center gap-4 bg-gradient-to-t from-black/90 to-transparent p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
+                <div className="flex max-w-full flex-wrap items-center justify-center gap-3 sm:gap-4">
                     {/* Mic Mute Toggle */}
                     <Button
                         type="button"

@@ -1,4 +1,3 @@
-import { Card } from "@/components/ui/card";
 import React from "react";
 
 type Props = {
@@ -7,9 +6,9 @@ type Props = {
 
 const ConversationContainer = ({children}: Props) => {
     return (
-        <Card className="relative flex h-full w-full flex-col overflow-hidden border-0 lg:border border-slate-200/80 bg-white dark:bg-[#071A35] lg:bg-white/80 lg:dark:bg-[#071A35]/70 text-slate-900 shadow-2xl lg:backdrop-blur-xl dark:border-white/10 dark:text-white p-0 lg:p-2 rounded-none lg:rounded-xl">
+        <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden border-0 bg-white dark:bg-[#071A35] lg:border lg:border-slate-200/80 lg:bg-white/80 lg:dark:bg-[#071A35]/70 text-slate-900 shadow-2xl lg:backdrop-blur-xl dark:text-white p-0 lg:p-2 rounded-none lg:rounded-xl dark:lg:border-white/10">
             {children}
-        </Card>
+        </div>
     );
 };
 
